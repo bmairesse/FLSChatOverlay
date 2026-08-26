@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Configurações</title>
+    <link rel="stylesheet" href="./config.css" />
+  </head>
+  <body>
+    <header>
+      <h1>FLS Chat Overlay</h1>
+      <p class="sub">Leitura anônima do chat. Nenhum login, token ou senha.</p>
+    </header>
+
+    <main>
+      <section>
+        <label for="channel">Canal da Twitch</label>
+        <div class="row">
+          <input
+            id="channel"
+            type="text"
+            placeholder="gaules"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button id="channel-apply" type="button" class="primary">Aplicar</button>
+        </div>
+        <p class="hint">
+          Só o nome que aparece na URL do canal. Colar o link inteiro também
+          funciona — ele é reduzido ao nome.
+        </p>
+      </section>
+
+      <section>
+        <label for="opacity">Opacidade <output id="opacity-out"></output></label>
+        <input id="opacity" type="range" min="0.05" max="1" step="0.05" />
+      </section>
+
+      <section>
+        <label for="font-size">Tamanho da fonte <output id="font-size-out"></output></label>
+        <input id="font-size" type="range" min="8" max="48" step="1" />
+      </section>
+
+      <section>
+        <label for="max-messages">Mensagens na tela</label>
+        <input id="max-messages" type="number" min="10" max="500" step="5" />
+        <p class="hint">Mensagens mais antigas são descartadas para não pesar.</p>
+      </section>
+
+      <section>
+        <label for="idle-secs">Aviso de modo mover após (segundos)</label>
+        <input id="idle-secs" type="number" min="1" max="120" step="1" />
+        <p class="hint">
+          Parado esse tempo com o click-through desligado, o overlay pisca em
+          vermelho para você não esquecer que os cliques não passam para o jogo.
+        </p>
+      </section>
+
+      <section class="actions">
+        <button id="move-btn" type="button">Ativar mover</button>
+        <button id="visible-btn" type="button">Ocultar overlay</button>
+      </section>
+
+      <section class="note">
+        <h2>Sobre privacidade</h2>
+        <p>
+          O app conecta ao IRC público da Twitch como espectador anônimo
+          (<code>justinfan</code>) e apenas <strong>lê</strong>. Ele não envia
+          mensagens, não pede OAuth e não tem acesso à sua conta.
+        </p>
+        <p>
+          Ele também não registra atalhos globais, não lê o teclado fora da
+          própria janela e não interage com nenhum outro processo — inclusive
+          jogos. Para reposicionar, use <strong>Ativar mover</strong> na bandeja.
+        </p>
+        <p class="path">Configurações em: <span id="config-path">…</span></p>
+      </section>
+    </main>
+
+    <footer><span id="toast"></span></footer>
+
+    <script src="./config.js"></script>
+  </body>
+</html>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Modelo do manifesto MSIX. Os campos entre chaves são substituídos por
+  scripts/build-msix.ps1 com os valores de msix/identity.json.
+
+  Não edite os valores de Identity aqui: eles precisam bater exatamente com o
+  que o Partner Center reservou para o app, e vivem no identity.json.
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap rescap">
+
+  <Identity
+    Name="{IDENTITY_NAME}"
+    Publisher="{PUBLISHER}"
+    Version="{VERSION}"
+    ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>{DISPLAY_NAME}</DisplayName>
+    <PublisherDisplayName>{PUBLISHER_DISPLAY_NAME}</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+    <Description>Overlay de chat da Twitch sempre no topo, com click-through. Leitura anônima, sem login.</Description>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily
+      Name="Windows.Desktop"
+      MinVersion="10.0.17763.0"
+      MaxVersionTested="10.0.22621.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="pt-BR" />
+    <Resource Language="en-US" />
+  </Resources>
+
+  <Applications>
+    <!--
+      EntryPoint="Windows.FullTrustApplication" é o que declara isto como um
+      app Win32 de confiança total, e não um UWP. É o modo correto para um
+      binário do Tauri.
+    -->
+    <Application
+      Id="App"
+      Executable="FLSChatOverlay.exe"
+      EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="{DISPLAY_NAME}"
+        Description="Overlay de chat da Twitch sempre no topo, com click-through."
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile
+          Wide310x150Logo="Assets\Wide310x150Logo.png"
+          Square310x310Logo="Assets\Square310x310Logo.png"
+          Square71x71Logo="Assets\Square71x71Logo.png" />
+      </uap:VisualElements>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <!-- Conexão com o IRC da Twitch. É a única rede que o app usa, e a CSP em
+         tauri.conf.json restringe ainda mais, no nível do webview. -->
+    <Capability Name="internetClient" />
+    <!-- Obrigatória para qualquer app Win32 empacotado. Na submissão o Partner
+         Center pede justificativa; veja docs/microsoft-store.md. -->
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>

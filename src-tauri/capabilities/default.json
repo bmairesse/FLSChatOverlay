@@ -1,0 +1,14 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Permissões mínimas: arrastar/redimensionar o overlay e falar com os comandos do backend.",
+  "windows": ["config", "overlay"],
+  "permissions": [
+    "core:default",
+    "core:event:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-start-resize-dragging",
+    "core:window:allow-inner-size",
+    "core:window:allow-outer-position"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "_comment": "Valores vindos do Partner Center: Produto > Gerenciamento de produto > Identidade do produto. Enquanto houver PREENCHER aqui, o build do MSIX é pulado. Veja docs/microsoft-store.md.",
+
+  "identityName": "PREENCHER-Nome-do-pacote-do-Partner-Center",
+  "publisher": "CN=PREENCHER-string-exata-do-Partner-Center",
+  "publisherDisplayName": "PREENCHER-nome-de-exibicao-do-publisher",
+  "displayName": "FLS Chat Overlay"
+}

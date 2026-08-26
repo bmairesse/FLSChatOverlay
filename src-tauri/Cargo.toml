@@ -1,0 +1,35 @@
+[package]
+name = "fls-chat-overlay"
+version = "0.1.0"
+description = "Overlay de chat da Twitch sempre no topo, com click-through"
+authors = ["Fairyland Studios"]
+license = "MIT"
+repository = "https://github.com/bmairesse/FLSChatOverlay"
+edition = "2021"
+rust-version = "1.77.2"
+
+[lib]
+name = "fls_chat_overlay_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "image-png", "image-ico"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.59", features = [
+  "Win32_Foundation",
+  "Win32_UI_WindowsAndMessaging",
+] }
+
+# Binário enxuto: é metade do argumento de usar Tauri em vez de Electron.
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

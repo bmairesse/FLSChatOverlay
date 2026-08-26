@@ -1,0 +1,89 @@
+name: build
+
+# O ponto deste workflow é a auditabilidade: qualquer pessoa pode abrir o log
+# público e ver que o .exe publicado saiu exatamente deste código-fonte, sem
+# etapa manual no meio.
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      # Depois do primeiro `npm install` local, commite o package-lock.json e
+      # troque isto por `npm ci` (e volte o `cache: npm` no setup-node).
+      - name: Instalar dependências
+        run: npm install
+
+      # Informativos por enquanto: troque para bloqueantes (removendo o
+      # continue-on-error) depois de rodar `cargo fmt` e `cargo clippy` local
+      # e deixar a árvore limpa.
+      - name: Checar formatação (Rust)
+        run: cargo fmt --all --check
+        working-directory: src-tauri
+        continue-on-error: true
+
+      - name: Clippy
+        run: cargo clippy --all-targets -- -D warnings
+        working-directory: src-tauri
+        continue-on-error: true
+
+      - name: Build
+        run: npm run build
+
+      - name: Hash dos artefatos
+        shell: pwsh
+        run: |
+          Get-ChildItem -Recurse -Path src-tauri/target/release/bundle -Include *.exe |
+            ForEach-Object { "{0}  {1}" -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash, $_.Name }
+
+      # Pula sozinho enquanto msix/identity.json tiver placeholders, para o
+      # build não quebrar em fork/clone de quem não publica na Store.
+      - name: Empacotar MSIX (Microsoft Store)
+        shell: pwsh
+        run: ./scripts/build-msix.ps1 -SkipIfUnconfigured
+
+      - name: Publicar MSIX como artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: fls-chat-overlay-msix
+          path: msix/out/*.msix
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fls-chat-overlay-windows
+          path: |
+            src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/*.exe
+          if-no-files-found: error
+
+      - name: Publicar release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: src-tauri/target/release/bundle/nsis/*.exe
+          generate_release_notes: true

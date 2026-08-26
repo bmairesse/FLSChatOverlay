@@ -1,0 +1,288 @@
+/* A janela é transparente: nada aqui pode pintar um fundo opaco em cima dela. */
+
+:root {
+  --chat-opacity: 0.85;
+  --font-size: 14px;
+  --accent: #a970ff; /* roxo Twitch */
+  --warn: #ff3b30;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  font-family: "Segoe UI", Inter, system-ui, sans-serif;
+  /* Em click-through o SO já ignora o cursor; isso é cinto e suspensório. */
+  user-select: none;
+  cursor: default;
+}
+
+/* ---------- chat ---------- */
+
+#chat {
+  position: absolute;
+  inset: 0;
+  padding: 8px 10px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  opacity: var(--chat-opacity);
+  font-size: var(--font-size);
+  line-height: 1.35;
+  color: #fff;
+  /* Contorno em vez de fundo: legível sobre cenário claro ou escuro sem
+     precisar de uma caixa opaca cobrindo o jogo. */
+  text-shadow: 0 0 3px #000, 0 0 6px #000, 0 1px 2px #000;
+  scrollbar-width: none;
+}
+
+#chat::-webkit-scrollbar {
+  display: none;
+}
+
+.msg {
+  margin: 0 0 4px;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  animation: fade-in 140ms ease-out;
+}
+
+.msg .user {
+  font-weight: 700;
+}
+
+.msg .sep {
+  opacity: 0.6;
+  margin-right: 4px;
+}
+
+.msg.action .text {
+  font-style: italic;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- status ---------- */
+
+#status {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 6px 10px;
+  font-size: 11px;
+  color: #ffd479;
+  text-shadow: 0 0 3px #000, 0 0 6px #000;
+  pointer-events: none;
+  display: none;
+}
+
+body.has-status #status {
+  display: block;
+}
+
+/* ---------- modo mover ---------- */
+
+#drag-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+#frame {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  z-index: 6;
+  transition: background-color 160ms ease;
+}
+
+#banner {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 7;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+  background: var(--accent);
+  border-radius: 4px 4px 0 0;
+}
+
+#banner-text {
+  flex: 1;
+  min-width: 0;
+}
+
+#lock-btn {
+  flex: none;
+  padding: 3px 10px;
+  font: inherit;
+  font-size: 11px;
+  color: #1a1a1a;
+  background: #fff;
+  border: 0;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+#lock-btn:hover {
+  background: #e8e8e8;
+}
+
+.handle {
+  position: absolute;
+  z-index: 8;
+  display: none;
+}
+
+body.move-mode #drag-layer {
+  pointer-events: auto;
+  cursor: move;
+}
+
+body.move-mode #frame {
+  border-color: var(--accent);
+  background: rgba(169, 112, 255, 0.08);
+}
+
+body.move-mode #banner {
+  display: flex;
+}
+
+body.move-mode #chat {
+  /* Abre espaço para o banner sem empurrar o conteúdo para fora. */
+  padding-top: 34px;
+}
+
+body.move-mode .handle {
+  display: block;
+}
+
+/* Aviso de inatividade: o usuário parou de mexer e o click-through continua
+   desligado. Precisa ser impossível de ignorar. */
+body.move-mode.warn #frame {
+  border-color: var(--warn);
+  background: rgba(255, 59, 48, 0.14);
+  animation: pulse-frame 900ms ease-in-out infinite;
+}
+
+body.move-mode.warn #banner {
+  background: var(--warn);
+  animation: pulse-banner 900ms ease-in-out infinite;
+}
+
+@keyframes pulse-frame {
+  0%,
+  100% {
+    border-color: var(--warn);
+    box-shadow: inset 0 0 0 0 rgba(255, 59, 48, 0);
+  }
+  50% {
+    border-color: #ff8a80;
+    box-shadow: inset 0 0 22px 4px rgba(255, 59, 48, 0.55);
+  }
+}
+
+@keyframes pulse-banner {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.72;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .msg,
+  body.move-mode.warn #frame,
+  body.move-mode.warn #banner {
+    animation: none;
+  }
+  body.move-mode.warn #frame {
+    box-shadow: inset 0 0 22px 4px rgba(255, 59, 48, 0.5);
+  }
+}
+
+/* ---------- alças ---------- */
+
+.handle[data-dir="North"],
+.handle[data-dir="South"] {
+  left: 8px;
+  right: 8px;
+  height: 6px;
+  cursor: ns-resize;
+}
+.handle[data-dir="East"],
+.handle[data-dir="West"] {
+  top: 8px;
+  bottom: 8px;
+  width: 6px;
+  cursor: ew-resize;
+}
+.handle[data-dir="North"] {
+  top: 0;
+}
+.handle[data-dir="South"] {
+  bottom: 0;
+}
+.handle[data-dir="East"] {
+  right: 0;
+}
+.handle[data-dir="West"] {
+  left: 0;
+}
+
+.handle[data-dir="NorthWest"],
+.handle[data-dir="NorthEast"],
+.handle[data-dir="SouthWest"],
+.handle[data-dir="SouthEast"] {
+  width: 12px;
+  height: 12px;
+}
+.handle[data-dir="NorthWest"] {
+  top: 0;
+  left: 0;
+  cursor: nwse-resize;
+}
+.handle[data-dir="NorthEast"] {
+  top: 0;
+  right: 0;
+  cursor: nesw-resize;
+}
+.handle[data-dir="SouthWest"] {
+  bottom: 0;
+  left: 0;
+  cursor: nesw-resize;
+}
+.handle[data-dir="SouthEast"] {
+  bottom: 0;
+  right: 0;
+  cursor: nwse-resize;
+}

@@ -1,0 +1,23 @@
+{
+  "name": "fls-chat-overlay",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Overlay de chat da Twitch sempre no topo, com click-through",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "vendor": "node scripts/vendor.mjs",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "icons": "python scripts/gen_icons.py",
+    "msix": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-msix.ps1",
+    "msix:test": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-msix.ps1 -SelfSign",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "tmi.js": "^1.8.5"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

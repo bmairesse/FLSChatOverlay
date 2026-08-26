@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Chat Overlay</title>
+    <link rel="stylesheet" href="./overlay.css" />
+  </head>
+  <body>
+    <!-- Camada de arraste: só existe (pointer-events) em modo mover. -->
+    <div id="drag-layer" aria-hidden="true"></div>
+
+    <!-- Moldura que sinaliza que o click-through está DESLIGADO. -->
+    <div id="frame" aria-hidden="true"></div>
+
+    <div id="banner" role="status">
+      <span id="banner-text">MODO MOVER ATIVO — cliques NÃO passam para o jogo</span>
+      <button id="lock-btn" type="button">Travar</button>
+    </div>
+
+    <div id="chat" role="log" aria-live="polite"></div>
+
+    <div id="status"></div>
+
+    <!-- Alças de redimensionamento, visíveis só em modo mover. -->
+    <div class="handle" data-dir="NorthWest"></div>
+    <div class="handle" data-dir="North"></div>
+    <div class="handle" data-dir="NorthEast"></div>
+    <div class="handle" data-dir="East"></div>
+    <div class="handle" data-dir="SouthEast"></div>
+    <div class="handle" data-dir="South"></div>
+    <div class="handle" data-dir="SouthWest"></div>
+    <div class="handle" data-dir="West"></div>
+
+    <script src="./vendor/tmi.min.js"></script>
+    <script src="./overlay.js"></script>
+  </body>
+</html>
