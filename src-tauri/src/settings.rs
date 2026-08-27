@@ -20,6 +20,15 @@ pub struct Settings {
     pub width: u32,
     pub height: u32,
     pub font_size: u32,
+    /// Cor do texto das mensagens, em hex `#rrggbb`. O nome de quem escreve não
+    /// entra aqui: ele usa a cor que a própria pessoa escolheu na Twitch.
+    pub text_color: String,
+    /// Cor do contorno do nome, em hex `#rrggbb`. O contorno não pode ser
+    /// desligado — é ele que mantém o nome legível sobre cenário claro.
+    pub name_outline_color: String,
+    /// Marca as linhas que citam `@canal`, como o chat do site faz. Mensagens
+    /// realçadas com pontos do canal são marcadas independentemente disto.
+    pub highlight_channel_mentions: bool,
     /// Quantas mensagens ficam na tela antes das antigas serem descartadas.
     pub max_messages: u32,
     /// Se o overlay começa visível.
@@ -38,6 +47,9 @@ impl Default for Settings {
             width: 380,
             height: 600,
             font_size: 14,
+            text_color: DEFAULT_TEXT_COLOR.to_string(),
+            name_outline_color: DEFAULT_NAME_OUTLINE_COLOR.to_string(),
+            highlight_channel_mentions: true,
             max_messages: 80,
             overlay_visible: true,
             idle_warning_secs: 5,
@@ -53,8 +65,47 @@ impl Settings {
         self.width = self.width.clamp(160, 4000);
         self.height = self.height.clamp(120, 4000);
         self.font_size = self.font_size.clamp(8, 48);
+        self.text_color = normalize_hex_color(&self.text_color, DEFAULT_TEXT_COLOR);
+        self.name_outline_color =
+            normalize_hex_color(&self.name_outline_color, DEFAULT_NAME_OUTLINE_COLOR);
         self.max_messages = self.max_messages.clamp(10, 500);
         self.idle_warning_secs = self.idle_warning_secs.clamp(1, 120);
+    }
+}
+
+pub const DEFAULT_TEXT_COLOR: &str = "#ffffff";
+pub const DEFAULT_NAME_OUTLINE_COLOR: &str = "#000000";
+
+/// Devolve sempre `#rrggbb` minúsculo, caindo no padrão se o valor não for uma
+/// cor hex válida. A forma curta `#abc` é expandida para `#aabbcc`.
+///
+/// Os seis dígitos não são preciosismo: o `<input type="color">` da janela de
+/// configurações só aceita esse formato e cai para preto, calado, diante de
+/// qualquer outro.
+///
+/// E validar não é só arrumar formatação — o valor vai parar direto em uma
+/// custom property do CSS no overlay, então um settings.json editado à mão não
+/// pode injetar texto arbitrário ali.
+pub fn normalize_hex_color(raw: &str, fallback: &str) -> String {
+    let trimmed = raw.trim().to_lowercase();
+    let hex = trimmed.strip_prefix('#').unwrap_or(&trimmed);
+
+    if !hex.chars().all(|c| c.is_ascii_hexdigit()) {
+        return fallback.to_string();
+    }
+
+    match hex.len() {
+        6 => format!("#{hex}"),
+        3 => {
+            let mut out = String::with_capacity(7);
+            out.push('#');
+            for c in hex.chars() {
+                out.push(c);
+                out.push(c);
+            }
+            out
+        }
+        _ => fallback.to_string(),
     }
 }
 

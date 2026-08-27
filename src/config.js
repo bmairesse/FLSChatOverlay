@@ -11,6 +11,11 @@ const el = {
   opacityOut: document.getElementById("opacity-out"),
   fontSize: document.getElementById("font-size"),
   fontSizeOut: document.getElementById("font-size-out"),
+  textColor: document.getElementById("text-color"),
+  textColorReset: document.getElementById("text-color-reset"),
+  nameOutline: document.getElementById("name-outline-color"),
+  nameOutlineReset: document.getElementById("name-outline-reset"),
+  highlightMentions: document.getElementById("highlight-mentions"),
   maxMessages: document.getElementById("max-messages"),
   idleSecs: document.getElementById("idle-secs"),
   moveBtn: document.getElementById("move-btn"),
@@ -18,6 +23,11 @@ const el = {
   configPath: document.getElementById("config-path"),
   toast: document.getElementById("toast"),
 };
+
+// Espelham os defaults do Rust (settings.rs). Só são usados pelos botões
+// "Padrão"; a fonte da verdade continua sendo o backend.
+const DEFAULT_TEXT_COLOR = "#ffffff";
+const DEFAULT_NAME_OUTLINE_COLOR = "#000000";
 
 let toastTimer = null;
 
@@ -40,6 +50,10 @@ function render(settings) {
   el.opacityOut.textContent = `${Math.round(settings.opacity * 100)}%`;
   el.fontSize.value = settings.font_size;
   el.fontSizeOut.textContent = `${settings.font_size}px`;
+  // <input type="color"> só aceita #rrggbb; o Rust já entrega nesse formato.
+  el.textColor.value = settings.text_color;
+  el.nameOutline.value = settings.name_outline_color;
+  el.highlightMentions.checked = settings.highlight_channel_mentions;
   el.maxMessages.value = settings.max_messages;
   el.idleSecs.value = settings.idle_warning_secs;
 
@@ -91,6 +105,27 @@ el.fontSize.addEventListener("input", () => {
   debouncedSave({ font_size: value });
 });
 
+// Arrastar no seletor de cor dispara `input` continuamente, igual aos sliders.
+el.textColor.addEventListener("input", () => {
+  debouncedSave({ text_color: el.textColor.value });
+});
+
+el.nameOutline.addEventListener("input", () => {
+  debouncedSave({ name_outline_color: el.nameOutline.value });
+});
+
+el.textColorReset.addEventListener("click", () => {
+  save({ text_color: DEFAULT_TEXT_COLOR }, "Cor do texto restaurada");
+});
+
+el.nameOutlineReset.addEventListener("click", () => {
+  save({ name_outline_color: DEFAULT_NAME_OUTLINE_COLOR }, "Contorno restaurado");
+});
+
+el.highlightMentions.addEventListener("change", () => {
+  save({ highlight_channel_mentions: el.highlightMentions.checked }, "Salvo");
+});
+
 el.maxMessages.addEventListener("change", () => {
   save({ max_messages: Number(el.maxMessages.value) }, "Salvo");
 });
@@ -133,7 +168,35 @@ listen("move-mode", (event) => {
 
 listen("settings-changed", (event) => render(event.payload));
 
+/* ---------- legenda dos selos ---------- */
+
+/* Montada a partir das mesmas definições que o overlay usa para desenhar
+   (badges.js). Se um selo mudar de cor ou de símbolo, a legenda acompanha
+   sozinha — não existe segunda cópia para esquecer de atualizar. */
+function renderBadgeLegend() {
+  const list = document.getElementById("badge-legend");
+  const items = document.createDocumentFragment();
+
+  for (const name of BADGE_ORDER) {
+    const def = BADGES[name];
+    const item = document.createElement("li");
+    item.appendChild(badgeElement(def));
+
+    const label = document.createElement("span");
+    label.textContent = def.label;
+    item.appendChild(label);
+
+    items.appendChild(item);
+  }
+
+  list.appendChild(items);
+}
+
 /* ---------- boot ---------- */
+
+// Fora do bloco assíncrono: a legenda não depende do backend, então uma falha
+// ao carregar as configurações não deve levá-la junto.
+renderBadgeLegend();
 
 (async () => {
   try {

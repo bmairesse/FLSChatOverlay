@@ -17,6 +17,10 @@
       <button id="lock-btn" type="button">Travar</button>
     </div>
 
+    <!-- Irmão do #chat, não filho: dentro dele o header rolaria com as
+         mensagens, que é justamente o que não pode acontecer. -->
+    <div id="header">FLS Chat Overlay — desenvolvido por oFadinha.com.br</div>
+
     <div id="chat" role="log" aria-live="polite"></div>
 
     <div id="status"></div>
@@ -32,6 +36,7 @@
     <div class="handle" data-dir="West"></div>
 
     <script src="./vendor/tmi.min.js"></script>
+    <script src="./badges.js"></script>
     <script src="./overlay.js"></script>
   </body>
 </html>

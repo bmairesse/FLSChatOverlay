@@ -33,6 +33,11 @@ function applySettings(next) {
 
   document.documentElement.style.setProperty("--chat-opacity", String(next.opacity));
   document.documentElement.style.setProperty("--font-size", `${next.font_size}px`);
+  // Valores já validados como hex pelo sanitize() do Rust.
+  document.documentElement.style.setProperty("--text-color", next.text_color);
+  document.documentElement.style.setProperty("--name-outline", next.name_outline_color);
+
+  el.body.classList.toggle("highlight-mentions", next.highlight_channel_mentions);
 
   trimMessages();
 
@@ -60,10 +65,41 @@ function colorFor(name, tagColor) {
   return FALLBACK_COLORS[hash % FALLBACK_COLORS.length];
 }
 
+// `BADGES`, `BADGE_ORDER` e `badgeElement` vêm de badges.js, carregado antes
+// deste arquivo — os mesmos desenhos alimentam a legenda das configurações.
+function appendBadges(line, badges) {
+  if (!badges) return;
+
+  for (const name of BADGE_ORDER) {
+    if (!Object.prototype.hasOwnProperty.call(badges, name)) continue;
+    const def = BADGES[name];
+    if (def) line.appendChild(badgeElement(def));
+  }
+}
+
 function trimMessages() {
   const max = settings ? settings.max_messages : 80;
   while (el.chat.children.length > max) {
     el.chat.removeChild(el.chat.firstChild);
+  }
+}
+
+/** A mensagem cita o canal? Ex.: `@rubini`, mas não `@rubinizinho`. */
+function mentionsChannel(text) {
+  const channel = settings && settings.channel;
+  if (!channel) return false;
+
+  const needle = `@${channel}`;
+  const haystack = text.toLowerCase();
+
+  for (let from = 0; ; from += 1) {
+    const at = haystack.indexOf(needle, from);
+    if (at === -1) return false;
+    // `\b` não serve aqui: para o regex `_` é caractere de palavra, e nome da
+    // Twitch pode terminar em `_`. Conferimos o caractere seguinte à mão.
+    const after = haystack[at + needle.length];
+    if (after === undefined || !/[a-z0-9_]/.test(after)) return true;
+    from = at;
   }
 }
 
@@ -72,6 +108,19 @@ function addMessage(tags, text, isAction) {
 
   const line = document.createElement("div");
   line.className = isAction ? "msg action" : "msg";
+
+  // Mensagem realçada com pontos do canal: a Twitch marca com este msg-id.
+  if (tags["msg-id"] === "highlighted-message") {
+    line.classList.add("highlighted");
+  }
+
+  // A classe é sempre aplicada; quem decide se ela pinta algo é a classe do
+  // <body>. Assim o botão da configuração afeta o que já está na tela.
+  if (mentionsChannel(text)) {
+    line.classList.add("mentions-channel");
+  }
+
+  appendBadges(line, tags.badges);
 
   const user = document.createElement("span");
   user.className = "user";

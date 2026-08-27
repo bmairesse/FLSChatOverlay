@@ -13,6 +13,9 @@ pub struct SettingsPatch {
     pub channel: Option<String>,
     pub opacity: Option<f64>,
     pub font_size: Option<u32>,
+    pub text_color: Option<String>,
+    pub name_outline_color: Option<String>,
+    pub highlight_channel_mentions: Option<bool>,
     pub max_messages: Option<u32>,
     pub idle_warning_secs: Option<u64>,
 }
@@ -36,6 +39,15 @@ pub fn save_settings(app: AppHandle, patch: SettingsPatch) -> Result<Settings, S
         }
         if let Some(v) = patch.font_size {
             s.font_size = v;
+        }
+        if let Some(v) = patch.text_color {
+            s.text_color = v;
+        }
+        if let Some(v) = patch.name_outline_color {
+            s.name_outline_color = v;
+        }
+        if let Some(v) = patch.highlight_channel_mentions {
+            s.highlight_channel_mentions = v;
         }
         if let Some(v) = patch.max_messages {
             s.max_messages = v;

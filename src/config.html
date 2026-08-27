@@ -30,6 +30,13 @@
         </p>
       </section>
 
+      <!-- Logo abaixo do canal de propósito: são as duas ações usadas no meio
+           de uma partida, quando rolar a janela atrás delas é o que atrapalha. -->
+      <section class="actions">
+        <button id="move-btn" type="button">Ativar mover</button>
+        <button id="visible-btn" type="button">Ocultar overlay</button>
+      </section>
+
       <section>
         <label for="opacity">Opacidade <output id="opacity-out"></output></label>
         <input id="opacity" type="range" min="0.05" max="1" step="0.05" />
@@ -38,6 +45,42 @@
       <section>
         <label for="font-size">Tamanho da fonte <output id="font-size-out"></output></label>
         <input id="font-size" type="range" min="8" max="48" step="1" />
+      </section>
+
+      <section>
+        <label for="text-color">Cor do texto das mensagens</label>
+        <div class="row">
+          <input id="text-color" type="color" />
+          <button id="text-color-reset" type="button">Padrão</button>
+        </div>
+        <p class="hint">
+          Vale só para o texto. O nome de quem escreve mantém a cor que a
+          própria pessoa escolheu na Twitch.
+        </p>
+      </section>
+
+      <section>
+        <label for="name-outline-color">Cor do contorno do nome</label>
+        <div class="row">
+          <input id="name-outline-color" type="color" />
+          <button id="name-outline-reset" type="button">Padrão</button>
+        </div>
+        <p class="hint">
+          O contorno é o que mantém o nome legível sobre cenário claro, então
+          ele não pode ser removido — só trocar de cor. O padrão é preto.
+        </p>
+      </section>
+
+      <section>
+        <label class="check" for="highlight-mentions">
+          <input id="highlight-mentions" type="checkbox" />
+          Destacar mensagens que citam o canal
+        </label>
+        <p class="hint">
+          Linhas com <code>@seucanal</code> ganham uma marca lateral, como no
+          chat do site. Mensagens realçadas com pontos do canal são sempre
+          marcadas, independentemente desta opção.
+        </p>
       </section>
 
       <section>
@@ -55,9 +98,15 @@
         </p>
       </section>
 
-      <section class="actions">
-        <button id="move-btn" type="button">Ativar mover</button>
-        <button id="visible-btn" type="button">Ocultar overlay</button>
+      <section class="note">
+        <h2>Selos do chat</h2>
+        <p>
+          Aparecem à esquerda do nome de quem escreve. São desenhados pelo
+          próprio app, sem baixar nada — equivalentes aos da Twitch, não
+          idênticos. O selo de assinante personalizado de cada canal não é
+          reproduzido: assinantes aparecem sempre com a estrela roxa.
+        </p>
+        <ul id="badge-legend" class="legend"></ul>
       </section>
 
       <section class="note">
@@ -78,6 +127,7 @@
 
     <footer><span id="toast"></span></footer>
 
+    <script src="./badges.js"></script>
     <script src="./config.js"></script>
   </body>
 </html>

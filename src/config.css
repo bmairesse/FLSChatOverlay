@@ -98,6 +98,71 @@ input[type="range"] {
   accent-color: var(--accent);
 }
 
+/* Amostra de cor, não campo de texto: esticar pela linha toda só desperdiça
+   espaço e desmancha a leitura da linha. */
+.row input[type="color"] {
+  flex: none;
+  width: 56px;
+  height: 36px;
+  padding: 2px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.row input[type="color"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* O <label> padrão separa os filhos nas pontas, o que aqui afastaria a caixa
+   de seleção do texto que ela rotula. */
+label.check {
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+label.check input[type="checkbox"] {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* Legenda dos selos. Duas colunas em janela estreita, mais conforme couber. */
+.legend {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px 12px;
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.legend .badge {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.legend span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 button {
   padding: 8px 14px;
   color: var(--text);

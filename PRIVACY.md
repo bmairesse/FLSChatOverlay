@@ -1,6 +1,6 @@
 # Política de Privacidade — FLS Chat Overlay
 
-Última atualização: 26 de agosto de 2026
+Última atualização: 27 de agosto de 2026
 
 ## Resumo
 
@@ -13,7 +13,8 @@ servidor nosso em lugar nenhum.
 O aplicativo guarda, **apenas no seu computador**, as suas preferências:
 
 - o nome do canal da Twitch que você escolheu exibir;
-- opacidade, tamanho da fonte, posição e tamanho da janela do overlay;
+- opacidade, tamanho da fonte, cor do texto, cor do contorno do nome, posição e
+  tamanho da janela do overlay;
 - número de mensagens mantidas na tela e o tempo do aviso do modo mover.
 
 Esses valores ficam num arquivo `settings.json` dentro da pasta de configuração
@@ -32,6 +33,11 @@ aplicativo não envia credenciais, não solicita OAuth, não tem acesso à sua c
 da Twitch e não é capaz de enviar mensagens ao chat. A única informação
 transmitida é o nome do canal que você configurou, no comando de entrada na
 sala.
+
+Os selos exibidos ao lado dos nomes (moderador, VIP, assinante e semelhantes)
+são desenhados pelo próprio aplicativo, em vetor. Nada é baixado para exibi-los:
+a informação de quem tem qual selo já vem junto da mensagem, pela conexão de
+chat acima.
 
 Essa restrição é aplicada tecnicamente, não apenas por escolha: a Content
 Security Policy do aplicativo permite conexões somente para esse endereço. O

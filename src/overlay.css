@@ -3,6 +3,8 @@
 :root {
   --chat-opacity: 0.85;
   --font-size: 14px;
+  --text-color: #fff;
+  --name-outline: #000;
   --accent: #a970ff; /* roxo Twitch */
   --warn: #ff3b30;
 }
@@ -30,13 +32,14 @@ body {
 #chat {
   position: absolute;
   inset: 0;
-  padding: 8px 10px;
+  /* O topo reserva a faixa do #header, que flutua por cima desta área. */
+  padding: 24px 10px 8px;
   overflow-y: auto;
   overflow-x: hidden;
   opacity: var(--chat-opacity);
   font-size: var(--font-size);
   line-height: 1.35;
-  color: #fff;
+  color: var(--text-color);
   /* Contorno em vez de fundo: legível sobre cenário claro ou escuro sem
      precisar de uma caixa opaca cobrindo o jogo. */
   text-shadow: 0 0 3px #000, 0 0 6px #000, 0 1px 2px #000;
@@ -56,6 +59,51 @@ body {
 
 .msg .user {
   font-weight: 700;
+  /* Sobrescreve o contorno herdado de #chat só para o nome. A cor é
+     configurável, a existência do contorno não: sem ele o nome some sobre
+     cenário claro, e a cor do nome vem da Twitch, fora do nosso controle. */
+  text-shadow: 0 0 3px var(--name-outline), 0 0 6px var(--name-outline),
+    0 1px 2px var(--name-outline);
+}
+
+/* Dimensão em `em`: o selo cresce junto com o texto em vez de virar um ponto
+   perdido numa fonte de 48px. */
+.msg .badge {
+  height: 1em;
+  width: 1em;
+  margin-right: 4px;
+  vertical-align: -0.15em;
+  /* Mesma lógica do contorno do texto: sobre cenário claro, um ícone colorido
+     sem borda se dissolve no fundo. */
+  filter: drop-shadow(0 0 2px #000) drop-shadow(0 1px 1px #000);
+}
+
+/* ---------- destaques ---------- */
+
+/* Sem caixa opaca: uma barra na lateral e um véu leve bastam para separar a
+   linha sem virar um retângulo sólido cobrindo o jogo.
+   A menção só ganha a caixa quando a configuração está ligada — a classe da
+   linha é aplicada sempre, então alternar reflete no que já está na tela. */
+.msg.highlighted,
+body.highlight-mentions .msg.mentions-channel {
+  padding: 2px 6px 2px 7px;
+  margin-left: -10px;
+  border-left: 3px solid;
+  border-radius: 0 3px 3px 0;
+}
+
+body.highlight-mentions .msg.mentions-channel {
+  border-left-color: #ffb300;
+  background: rgba(255, 179, 0, 0.16);
+}
+
+/* Realce pago vence a menção quando a linha é as duas coisas. O primeiro
+   seletor existe só para empatar a especificidade do bloco acima; sem ele a
+   menção ganharia por ter uma classe a mais no caminho. */
+body.highlight-mentions .msg.mentions-channel.highlighted,
+.msg.highlighted {
+  border-left-color: var(--accent);
+  background: rgba(169, 112, 255, 0.2);
 }
 
 .msg .sep {
@@ -76,6 +124,38 @@ body {
     opacity: 1;
     transform: none;
   }
+}
+
+/* ---------- header fixo ---------- */
+
+/* Assinatura permanente do overlay. Fica fora do #chat de propósito: é o que
+   garante que ela não role junto com as mensagens. */
+#header {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 4;
+  padding: 6px 10px 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-color);
+  /* Acompanha o slider de opacidade: em opacidade cheia a assinatura pesaria
+     mais que as próprias mensagens, que é o oposto do que se quer. */
+  opacity: var(--chat-opacity);
+  /* Sem fundo, a legibilidade sobre cenário claro depende só do contorno. */
+  text-shadow: 0 0 3px #000, 0 0 6px #000, 0 1px 2px #000;
+  /* O app inteiro depende do click-through; nada aqui pode capturar cursor. */
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Em modo mover o #banner ocupa exatamente esta faixa. Some com a assinatura:
+   nesse momento o aviso de que os cliques não passam é o que importa. */
+body.move-mode #header {
+  display: none;
 }
 
 /* ---------- status ---------- */

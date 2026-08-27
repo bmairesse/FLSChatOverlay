@@ -43,7 +43,8 @@ navegador, não toca na sua conta, não injeta nada em processo nenhum de jogo. 
 [`src/overlay.js`](src/overlay.js); a política de rede (CSP) está travada em
 [`src-tauri/tauri.conf.json`](src-tauri/tauri.conf.json) e só permite
 `wss://irc-ws.chat.twitch.tv` — o app é incapaz de falar com qualquer outro
-servidor. O `.exe` publicado sai do
+servidor. Os selos ao lado dos nomes são desenhados em vetor pelo próprio app,
+sem baixar nada. O `.exe` publicado sai do
 [workflow público do GitHub Actions](.github/workflows/build.yml), com log aberto,
 a partir deste mesmo código.
 
@@ -248,7 +249,11 @@ API do Windows em `platform.rs`, e reafirmadas periodicamente pelo watchdog.
 
 ## Roadmap
 
-- [ ] Badges e emotes
+- [x] Selos (badges) ao lado do nome, desenhados em vetor
+- [x] Destaque de mensagens realçadas e de menções ao canal
+- [ ] Emotes
+- [ ] Selo de assinante personalizado do canal (exigiria a API autenticada da
+      Twitch e uma segunda conexão de rede — por ora, selo genérico)
 - [ ] Filtros (ignorar bots, comandos, usuários)
 - [ ] Temas / estilo do chat
 - [ ] Fade automático de mensagens antigas
