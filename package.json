@@ -1,7 +1,7 @@
 {
   "name": "fls-chat-overlay",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Overlay de chat da Twitch sempre no topo, com click-through",
   "license": "MIT",
   "type": "module",

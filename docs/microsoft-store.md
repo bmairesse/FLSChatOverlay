@@ -128,16 +128,12 @@ Twitch — é diferencial de confiança e evita perguntas do revisor.
 ## 8. Atualizações
 
 O `build-msix.ps1` lê a versão de `src-tauri/tauri.conf.json` e acrescenta a
-revisão zerada (`0.1.0` → `0.1.0.0`). A Store **exige** que o quarto componente
+revisão zerada (`1.0.0` → `1.0.0.0`). A Store **exige** que o quarto componente
 seja `0`; ela reserva esse campo para si.
 
 Cada envio precisa de versão maior que a anterior. Suba o número em
 `src-tauri/tauri.conf.json` (e, por consistência, em `package.json` e
 `src-tauri/Cargo.toml`) antes de gerar o pacote.
-
-> Para o primeiro envio, considere subir para `1.0.0`. Não é exigência técnica,
-> mas versão `0.x` na Store passa a impressão de inacabado para quem só vê a
-> listagem.
 
 ## 9. WebView2
 
