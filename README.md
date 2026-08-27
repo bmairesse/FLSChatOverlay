@@ -92,15 +92,10 @@ detecção — mas vale saber.
 
 ## Instalação
 
-Três caminhos, do mais simples ao mais paranoico. Todos entregam o mesmo app.
+Dois caminhos disponíveis hoje, do mais simples ao mais paranoico. Os dois
+entregam o mesmo app.
 
-### 1. Microsoft Store
-
-O caminho sem atrito: instala como qualquer outro app, atualiza sozinho e não
-mostra aviso nenhum, porque o pacote é assinado pela própria Microsoft. Também
-é o único caminho que passa por revisão de terceiro antes de chegar em você.
-
-### 2. Instalador do GitHub Releases
+### 1. Instalador do GitHub Releases
 
 Baixe o `.exe` na
 [aba **Releases**](https://github.com/bmairesse/FLSChatOverlay/releases/latest).
@@ -113,10 +108,19 @@ O instalador **não** é assinado digitalmente, então o SmartScreen vai avisar
 mesmo*). Isso vale para todo software independente sem certificado de assinatura
 de código e não diz nada sobre o conteúdo do arquivo.
 
-### 3. Compilar você mesmo
+### 2. Compilar você mesmo
 
 Se você não quer confiar em binário nenhum — nem no meu, nem no do CI — o
 projeto compila com dois comandos. É o passo a passo logo abaixo.
+
+### Microsoft Store — ainda não disponível
+
+O app **ainda não está publicado na Microsoft Store**. O empacotamento MSIX já
+existe no repositório (`msix/`, [`docs/microsoft-store.md`](docs/microsoft-store.md)),
+mas a submissão ainda não foi feita, então não há nada para instalar por lá
+por enquanto. Quando estiver no ar, esse vai ser o caminho sem atrito: instala
+como qualquer outro app, atualiza sozinho e não mostra aviso de editor
+desconhecido, porque o pacote é assinado pela própria Microsoft.
 
 ## Compilar você mesmo
 
