@@ -7,6 +7,10 @@
   --name-outline: #000;
   --accent: #a970ff; /* roxo Twitch */
   --warn: #ff3b30;
+  /* Faixa reservada ao #header (e ao #banner, mais alto por causa do botão).
+     O #chat começa depois dela, então nenhuma mensagem alcança a assinatura. */
+  --header-h: 24px;
+  --banner-h: 34px;
 }
 
 * {
@@ -31,9 +35,16 @@ body {
 
 #chat {
   position: absolute;
-  inset: 0;
-  /* O topo reserva a faixa do #header, que flutua por cima desta área. */
-  padding: 24px 10px 8px;
+  /* O recorte começa abaixo do header em vez de ser padding interno: em um
+     container rolável o padding rola junto com o conteúdo, e era por isso que
+     as mensagens passavam por cima da assinatura. Agora a borda de cima do
+     #chat corta o que sobe. */
+  inset: var(--header-h) 0 0;
+  padding: 0 10px 8px;
+  /* O corte seco na borda decepa a linha no meio da letra; a máscara faz a
+     mensagem se dissolver ao sair, sem pintar nada por cima do jogo. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 10px);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 10px);
   overflow-y: auto;
   overflow-x: hidden;
   opacity: var(--chat-opacity);
@@ -136,7 +147,13 @@ body.highlight-mentions .msg.mentions-channel.highlighted,
   right: 0;
   top: 0;
   z-index: 4;
-  padding: 6px 10px 0;
+  /* Altura fixa amarrada à mesma variável que recua o #chat: a faixa
+     reservada e a assinatura não têm como sair de sincronia. */
+  height: var(--header-h);
+  /* line-height em vez de flex para centrar: o flex embrulharia o texto num
+     item anônimo e o text-overflow abaixo pararia de truncar. */
+  line-height: var(--header-h);
+  padding: 0 10px;
   font-size: 11px;
   font-weight: 600;
   color: var(--text-color);
@@ -256,8 +273,8 @@ body.move-mode #banner {
 }
 
 body.move-mode #chat {
-  /* Abre espaço para o banner sem empurrar o conteúdo para fora. */
-  padding-top: 34px;
+  /* Mesma lógica: o banner é mais alto que o header, então o recorte desce. */
+  inset-block-start: var(--banner-h);
 }
 
 body.move-mode .handle {
