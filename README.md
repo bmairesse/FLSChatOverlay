@@ -134,8 +134,9 @@ npm run dev     # desenvolvimento, com hot reload do frontend
 npm run build   # gera o instalador em src-tauri/target/release/bundle/nsis/
 ```
 
-O `npm install` traz o [tmi.js](https://tmijs.com/), que é copiado para
-`src/vendor/` pelo script `npm run vendor` (roda sozinho antes de dev/build).
+O `npm install` traz o [tmi.js](https://tmijs.com/), publicado no npm apenas em
+CommonJS para Node. O script `npm run vendor` (roda sozinho antes de dev/build)
+converte esse pacote em um bundle de browser em `src/vendor/`, usando o esbuild.
 Nada é carregado de CDN em tempo de execução.
 
 Para gerar o pacote da Microsoft Store, veja
@@ -229,7 +230,7 @@ msix/                   empacotamento para a Microsoft Store
   Assets/               logos e tiles da Store
 scripts/
   gen_icons.py          gera ícones do app e assets da Store (sem dependências)
-  vendor.mjs            copia o tmi.js de node_modules para src/vendor
+  vendor.mjs            gera o bundle de browser do tmi.js em src/vendor
   build-msix.ps1        monta o MSIX a partir do binário compilado
 docs/
   microsoft-store.md    passo a passo da submissão à Store

@@ -102,7 +102,9 @@ pub fn sync_menu(app: &AppHandle) {
     let visible = overlay::overlay_window(app)
         .and_then(|w| w.is_visible().ok())
         .unwrap_or(false);
-    let _ = items
-        .visible_item
-        .set_text(if visible { "Ocultar overlay" } else { "Mostrar overlay" });
+    let _ = items.visible_item.set_text(if visible {
+        "Ocultar overlay"
+    } else {
+        "Mostrar overlay"
+    });
 }

@@ -24,6 +24,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -33,23 +34,18 @@ jobs:
         with:
           workspaces: src-tauri
 
-      # Depois do primeiro `npm install` local, commite o package-lock.json e
-      # troque isto por `npm ci` (e volte o `cache: npm` no setup-node).
       - name: Instalar dependências
-        run: npm install
+        run: npm ci
 
-      # Informativos por enquanto: troque para bloqueantes (removendo o
-      # continue-on-error) depois de rodar `cargo fmt` e `cargo clippy` local
-      # e deixar a árvore limpa.
+      # Bloqueantes de propósito: enquanto foram informativos, um erro de
+      # compilação real passou como "success" na interface do GitHub.
       - name: Checar formatação (Rust)
         run: cargo fmt --all --check
         working-directory: src-tauri
-        continue-on-error: true
 
       - name: Clippy
         run: cargo clippy --all-targets -- -D warnings
         working-directory: src-tauri
-        continue-on-error: true
 
       - name: Build
         run: npm run build

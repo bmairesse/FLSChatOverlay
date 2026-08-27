@@ -169,7 +169,11 @@ pub fn set_move_mode(app: &AppHandle, active: bool) -> Result<(), String> {
         state.move_mode.store(active, Ordering::SeqCst);
         state.warned.store(false, Ordering::SeqCst);
         *state.last_activity.lock().unwrap() = Instant::now();
-        state.settings.lock().unwrap().idle_warning_secs
+        // O binding não é enfeite: como última expressão do bloco, o MutexGuard
+        // temporário sobreviveria ao `state` que ele empresta. Nomear o valor
+        // solta o guard aqui, antes do fim do bloco.
+        let secs = state.settings.lock().unwrap().idle_warning_secs;
+        secs
     };
 
     if active {
