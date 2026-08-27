@@ -102,10 +102,11 @@ mostra aviso nenhum, porque o pacote é assinado pela própria Microsoft. També
 
 ### 2. Instalador do GitHub Releases
 
-Baixe o `.exe` na aba **Releases**. Ele sai do
-[workflow público do CI](.github/workflows/build.yml), com log aberto, e o hash
-SHA256 de cada build é impresso nesse log — dá para conferir que o arquivo
-baixado é o mesmo que o CI produziu a partir deste código.
+Baixe o `.exe` na
+[aba **Releases**](https://github.com/bmairesse/FLSChatOverlay/releases/latest).
+Ele sai do [workflow público do CI](.github/workflows/build.yml), com log
+aberto, e o hash SHA256 de cada build é impresso nesse log — dá para conferir
+que o arquivo baixado é o mesmo que o CI produziu a partir deste código.
 
 O instalador **não** é assinado digitalmente, então o SmartScreen vai avisar
 "editor desconhecido" na primeira execução (*Mais informações → Executar assim
