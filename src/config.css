@@ -240,6 +240,56 @@ code {
   font-size: 11px;
 }
 
+/* ---------- diálogo da assinatura ---------- */
+
+/* <dialog> nativo: foco preso, Esc e backdrop já vêm de graça. O visual é o
+   mesmo cartão de .note — é um recado, não um erro, e não deve parecer um. */
+dialog {
+  width: min(400px, calc(100vw - 40px));
+  padding: 0;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+dialog form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 18px;
+}
+
+dialog h2 {
+  margin: 0;
+  font-size: 14px;
+}
+
+dialog p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+/* <menu> traz marcador e recuo de lista do UA. */
+dialog menu {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+dialog menu button {
+  flex: 1;
+}
+
 footer {
   position: fixed;
   left: 0;

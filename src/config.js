@@ -16,6 +16,9 @@ const el = {
   nameOutline: document.getElementById("name-outline-color"),
   nameOutlineReset: document.getElementById("name-outline-reset"),
   highlightMentions: document.getElementById("highlight-mentions"),
+  showHeader: document.getElementById("show-header"),
+  headerDialog: document.getElementById("header-dialog"),
+  headerDisable: document.getElementById("header-disable"),
   maxMessages: document.getElementById("max-messages"),
   idleSecs: document.getElementById("idle-secs"),
   moveBtn: document.getElementById("move-btn"),
@@ -54,6 +57,7 @@ function render(settings) {
   el.textColor.value = settings.text_color;
   el.nameOutline.value = settings.name_outline_color;
   el.highlightMentions.checked = settings.highlight_channel_mentions;
+  el.showHeader.checked = settings.show_header;
   el.maxMessages.value = settings.max_messages;
   el.idleSecs.value = settings.idle_warning_secs;
 
@@ -124,6 +128,35 @@ el.nameOutlineReset.addEventListener("click", () => {
 
 el.highlightMentions.addEventListener("change", () => {
   save({ highlight_channel_mentions: el.highlightMentions.checked }, "Salvo");
+});
+
+/* Desligar a assinatura passa por um recado do autor; ligar de volta, não —
+ * quem está religando já ouviu o argumento.
+ *
+ * A caixa volta a marcada antes de o diálogo abrir: enquanto ele está na tela
+ * nada foi salvo, e o que aparece precisa dizer isso. De quebra, fechar no Esc
+ * ou no backdrop cai no mesmo lugar que "Deixar ligada", sem handler nenhum
+ * para desfazer. */
+el.showHeader.addEventListener("change", () => {
+  if (el.showHeader.checked) {
+    save({ show_header: true }, "Assinatura ligada");
+    return;
+  }
+  el.showHeader.checked = true;
+  el.headerDialog.showModal();
+});
+
+/* A decisão sai do clique no botão, não do evento `close` do <dialog>.
+ *
+ * O caminho óbvio seria ler o `returnValue` no `close`, mas ele é frágil por
+ * dois motivos: o valor sobrevive ao fechamento e o Esc não o limpa, então a
+ * resposta de uma vez decidiria a próxima; e o `close` chega depois, quando o
+ * diálogo já saiu — em teste ele deixou de disparar. O clique é o que a pessoa
+ * de fato fez. Fechar o diálogo continua sendo trabalho do `method="dialog"`
+ * do form, sem JS. */
+el.headerDisable.addEventListener("click", () => {
+  el.showHeader.checked = false;
+  save({ show_header: false }, "Assinatura desligada");
 });
 
 el.maxMessages.addEventListener("change", () => {

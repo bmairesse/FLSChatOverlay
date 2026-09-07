@@ -175,6 +175,19 @@ body.move-mode #header {
   display: none;
 }
 
+/* Assinatura desligada nas configurações. Zerar a variável em vez de mexer no
+   #chat: a faixa reservada é a mesma medida que recua as mensagens, então o
+   espaço vago é devolvido ao chat sem uma segunda regra para sair de sintonia
+   — e o recuo maior do modo mover continua vencendo, porque ele sobrescreve o
+   `inset-block-start` e não a variável. */
+body.no-header {
+  --header-h: 0px;
+}
+
+body.no-header #header {
+  display: none;
+}
+
 /* ---------- status ---------- */
 
 #status {
@@ -229,6 +242,11 @@ body.has-status #status {
   color: #fff;
   background: var(--accent);
   border-radius: 4px 4px 0 0;
+  /* A faixa arrasta a janela como o resto do overlay: sem receber cursor, o
+     mousedown atravessa para o #drag-layer, que fica logo abaixo dela e já
+     sabe iniciar o arraste. Sem isto o #banner (z-index 7, acima do layer)
+     engolia o clique — era a única parte da janela que não movia. */
+  pointer-events: none;
 }
 
 #banner-text {
@@ -238,6 +256,9 @@ body.has-status #status {
 
 #lock-btn {
   flex: none;
+  /* Exceção ao pointer-events do #banner: o botão de travar é a saída do modo
+     mover, então ele não pode virar área de arraste. */
+  pointer-events: auto;
   padding: 3px 10px;
   font: inherit;
   font-size: 11px;

@@ -38,8 +38,13 @@ function applySettings(next) {
   document.documentElement.style.setProperty("--name-outline", next.name_outline_color);
 
   el.body.classList.toggle("highlight-mentions", next.highlight_channel_mentions);
+  el.body.classList.toggle("no-header", !next.show_header);
 
   trimMessages();
+  // Fonte, assinatura e teto de mensagens mudam a altura do conteúdo sem mexer
+  // na caixa do #chat, então o ResizeObserver não é acionado: quem ancora
+  // nestes casos é esta chamada.
+  pinToBottom();
 
   if (next.channel !== previousChannel) {
     connect(next.channel);
@@ -76,6 +81,28 @@ function appendBadges(line, badges) {
     if (def) line.appendChild(badgeElement(def));
   }
 }
+
+/* O chat só faz sentido colado no fim: interessa a mensagem mais nova, e o
+ * overlay é click-through — ninguém consegue rolar de volta para procurar o
+ * que ficou escondido.
+ *
+ * `scrollTop` guarda uma distância em pixels, não uma âncora no texto. Quando a
+ * janela é redimensionada ou a fonte muda, o conteúdo se refaz e essa mesma
+ * distância passa a apontar para outro ponto: as linhas novas ficam abaixo da
+ * borda de baixo, cortadas no meio e sem como voltar. Por isso tudo que mexe na
+ * geometria termina aqui.
+ *
+ * Ler `scrollHeight` obriga o layout a se atualizar antes da conta, então
+ * chamar logo depois de trocar uma custom property já enxerga a altura nova. */
+function pinToBottom() {
+  el.chat.scrollTop = el.chat.scrollHeight;
+}
+
+// Redimensionar a janela (ou ligar/desligar a assinatura) muda a caixa do
+// #chat; estreitá-la ainda reembrulha as linhas, mudando a altura do conteúdo
+// junto. O observer roda depois do novo layout e antes da pintura, então a
+// âncora acompanha o arraste da alça quadro a quadro, sem piscar.
+new ResizeObserver(pinToBottom).observe(el.chat);
 
 function trimMessages() {
   const max = settings ? settings.max_messages : 80;
@@ -143,7 +170,7 @@ function addMessage(tags, text, isAction) {
 
   el.chat.appendChild(line);
   trimMessages();
-  el.chat.scrollTop = el.chat.scrollHeight;
+  pinToBottom();
 }
 
 function setStatus(text) {

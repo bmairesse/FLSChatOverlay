@@ -84,6 +84,17 @@
       </section>
 
       <section>
+        <label class="check" for="show-header">
+          <input id="show-header" type="checkbox" />
+          Mostrar a assinatura no topo do overlay
+        </label>
+        <p class="hint">
+          É a linha <code>FLS Chat Overlay — desenvolvido por oFadinha.com.br</code>
+          acima das mensagens. Desligar devolve a faixa dela para o chat.
+        </p>
+      </section>
+
+      <section>
         <label for="max-messages">Mensagens na tela</label>
         <input id="max-messages" type="number" min="10" max="500" step="5" />
         <p class="hint">Mensagens mais antigas são descartadas para não pesar.</p>
@@ -126,6 +137,33 @@
     </main>
 
     <footer><span id="toast"></span></footer>
+
+    <!-- <dialog> nativo: já vem com foco preso, fechar no Esc e backdrop, sem
+         uma linha de JS para isso. Aparece só na hora de desligar — ligar de
+         volta não precisa de conversa. -->
+    <dialog id="header-dialog">
+      <form method="dialog">
+        <h2>Antes de tirar a assinatura</h2>
+        <p>
+          Deixei essa linha ligada por padrão porque ela é a única forma de
+          quem assiste à sua live descobrir de onde veio o overlay. Ela me dá
+          visibilidade para o que estou começando a fazer pela comunidade.
+        </p>
+        <p>
+          Dito isso, a tela é sua. Se você prefere sem a assinatura, pode
+          desligar tranquilo — nada mais no app muda, e dá para ligar de volta
+          aqui quando quiser. Sem ressentimento. 💜
+        </p>
+        <menu>
+          <!-- type="submit" num form method="dialog": os dois fecham o
+               diálogo sem JS. Só o de desligar tem handler. -->
+          <button id="header-keep" type="submit" class="primary" autofocus>
+            Deixar ligada
+          </button>
+          <button id="header-disable" type="submit">Desligar mesmo assim</button>
+        </menu>
+      </form>
+    </dialog>
 
     <script src="./badges.js"></script>
     <script src="./config.js"></script>

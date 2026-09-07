@@ -17,6 +17,7 @@ pub struct SettingsPatch {
     pub name_outline_color: Option<String>,
     pub highlight_channel_mentions: Option<bool>,
     pub max_messages: Option<u32>,
+    pub show_header: Option<bool>,
     pub idle_warning_secs: Option<u64>,
 }
 
@@ -51,6 +52,9 @@ pub fn save_settings(app: AppHandle, patch: SettingsPatch) -> Result<Settings, S
         }
         if let Some(v) = patch.max_messages {
             s.max_messages = v;
+        }
+        if let Some(v) = patch.show_header {
+            s.show_header = v;
         }
         if let Some(v) = patch.idle_warning_secs {
             s.idle_warning_secs = v;

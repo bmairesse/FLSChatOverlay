@@ -31,6 +31,10 @@ pub struct Settings {
     pub highlight_channel_mentions: bool,
     /// Quantas mensagens ficam na tela antes das antigas serem descartadas.
     pub max_messages: u32,
+    /// Mostra a assinatura fixa no topo do overlay. Ligado por padrão: é a
+    /// única forma de quem vê a live descobrir de onde o overlay veio. Quem
+    /// preferir a tela limpa pode desligar — a decisão é do usuário.
+    pub show_header: bool,
     /// Se o overlay começa visível.
     pub overlay_visible: bool,
     /// Segundos sem movimento até o aviso visual do modo mover.
@@ -51,6 +55,7 @@ impl Default for Settings {
             name_outline_color: DEFAULT_NAME_OUTLINE_COLOR.to_string(),
             highlight_channel_mentions: true,
             max_messages: 80,
+            show_header: true,
             overlay_visible: true,
             idle_warning_secs: 5,
         }
