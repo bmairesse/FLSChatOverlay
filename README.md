@@ -6,6 +6,10 @@ joga em um monitor só e não pode desviar o olhar para a janela do navegador.
 - Sempre no topo, inclusive sobre jogos em **fullscreen borderless**
 - **Click-through por padrão**: os cliques atravessam o overlay e chegam no jogo
 - Opacidade, fonte e posição ajustáveis
+- **Vários chats ao mesmo tempo**, cada um com o seu canal, a sua posição e o
+  seu `@` destacado
+- **Perfis**: quantos você quiser, cada um com o seu conjunto de chats — troque
+  todos de uma vez pela bandeja
 - Vive na bandeja do sistema
 - **Nenhum login na Twitch. Nenhum token. Nenhuma senha.**
 
@@ -163,6 +167,36 @@ Para gerar o pacote da Microsoft Store, veja
 Não existe atalho global: o app não registra nenhuma tecla fora da própria
 janela. Isso é [deliberado](#compatibilidade-com-anti-cheat).
 
+### Perfis e vários chats
+
+A configuração é organizada em dois níveis:
+
+- **Perfil** — um conjunto nomeado de chats. Dá para ter quantos quiser: um por
+  jogo, um para quando você está na live e outro para quando está assistindo.
+  Trocar de perfil fecha os overlays do perfil anterior e abre os do novo, cada
+  um na posição em que estava. A troca também está no menu da bandeja, em
+  **Perfil**, sem precisar abrir a janela de configurações.
+- **Chat** — uma janela de overlay. Cada chat do perfil tem o seu canal, a sua
+  posição, o seu tamanho, a sua cor, a sua opacidade e o seu teto de mensagens.
+  Dá para adicionar quantos quiser, e esconder um sem fechar os outros: na
+  janela de configurações os chats do perfil aparecem em lista, cada um com um
+  interruptor que mostra e esconde aquela janela na hora.
+
+Cada chat também tem um campo **"seu @ neste chat"**. Ele é o nome destacado nas
+mensagens daquela janela. Vazio, o destaque é para menções ao dono do canal —
+que é o comportamento antigo. Preenchido com o seu nome da Twitch, você vê
+quando falam com *você* na live de outra pessoa. Como o campo é por chat, cada
+janela pode vigiar um `@` diferente.
+
+O **modo mover**, ao contrário, é do app inteiro: ele libera todas as janelas
+visíveis de uma vez, para você arrumar o layout completo em uma passada só. O
+aviso de inatividade vale igual — o risco (cliques que não chegam no jogo) é da
+tela, não de uma janela.
+
+Quem já usava a versão 1.x não precisa fazer nada: o `settings.json` antigo é
+convertido na primeira abertura para um perfil chamado *Padrão* com um chat
+dentro, com todos os ajustes preservados.
+
 ### Modo mover, em detalhe
 
 Enquanto o modo mover está ativo, o click-through fica **desligado** — ou seja,
@@ -184,8 +218,9 @@ O tempo de 5 segundos é configurável.
 | Item | O que faz |
 | --- | --- |
 | Abrir configurações | Abre a janela de config (duplo-clique no ícone também) |
+| Perfil | Submenu com os perfis; o em uso aparece marcado |
 | Ativar mover / Travar posição | Alterna click-through e o modo de reposicionamento |
-| Mostrar / Ocultar overlay | Some com o overlay sem fechar o app |
+| Mostrar / Ocultar overlays | Some com todos os overlays sem fechar o app |
 | Sair | Encerra de verdade |
 
 Fechar a janela de configurações **não** encerra o app — ele continua na bandeja.
@@ -215,6 +250,12 @@ Em `%APPDATA%\com.fairylandstudios.chatoverlay\settings.json`. O caminho exato a
 no rodapé da janela de configurações. É um JSON simples, sem nada sensível
 dentro — pode abrir, editar e apagar à vontade.
 
+O formato é `{ version, active_profile, profiles: [{ id, name, chats: [...] }],
+idle_warning_secs }`. Um arquivo da versão 1.x (campos na raiz, um chat só) é
+reconhecido e convertido automaticamente; o original fica guardado ao lado como
+`settings.v1.json`, caso você precise voltar para a 1.x. Valor fora de faixa ou
+id repetido editado à mão é corrigido na leitura, não rejeitado.
+
 ---
 
 ## Mapa do código
@@ -225,10 +266,10 @@ src/                    frontend, HTML/CSS/JS puro (sem bundler)
   config.html/.css/.js  janela de configurações
 src-tauri/src/
   lib.rs                montagem do app, plugins, eventos de janela
-  overlay.rs            criação das janelas, modo mover, watchdog de 5s
+  overlay.rs            janelas dos chats, modo mover, watchdog de 5s
   platform.rs           flags nativas do Windows (click-through, topmost)
   tray.rs               ícone e menu da bandeja
-  settings.rs           persistência em JSON no app config dir
+  settings.rs           perfis, chats e persistência em JSON (com migração da 1.x)
   commands.rs           comandos expostos às webviews
 msix/                   empacotamento para a Microsoft Store
   AppxManifest.xml      modelo do manifesto MSIX
@@ -256,6 +297,7 @@ API do Windows em `platform.rs`, e reafirmadas periodicamente pelo watchdog.
 
 - [x] Selos (badges) ao lado do nome, desenhados em vetor
 - [x] Destaque de mensagens realçadas e de menções ao canal
+- [x] Perfis e vários chats simultâneos, com `@` por chat
 - [ ] Emotes
 - [ ] Selo de assinante personalizado do canal (exigiria a API autenticada da
       Twitch e uma segunda conexão de rede — por ora, selo genérico)

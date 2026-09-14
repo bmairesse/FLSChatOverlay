@@ -1,5 +1,11 @@
 /* Overlay: conecta anonimamente ao chat da Twitch e desenha as mensagens.
  *
+ * Cada chat configurado tem uma janela própria rodando uma cópia deste arquivo.
+ * Qual delas é esta, quem decide é o backend: o id do chat sai do label da
+ * janela, então `get_chat` já chega filtrado. O `chat-changed` também, mas só
+ * porque o `listen` do boot declara o alvo — veja o comentário lá. Fora isso,
+ * não existe aqui nenhuma referência a chat que não seja o desta janela.
+ *
  * Nenhum login, token ou cookie é usado em lugar nenhum deste arquivo. O tmi.js
  * sem `identity` entra como `justinfan<numero>`, que é o modo de leitura
  * anônima oficial do IRC da Twitch. O único dado que sai daqui é o nome do
@@ -15,21 +21,23 @@ const el = {
   chat: document.getElementById("chat"),
   status: document.getElementById("status"),
   banner: document.getElementById("banner"),
+  bannerChat: document.getElementById("banner-chat"),
   bannerText: document.getElementById("banner-text"),
   lockBtn: document.getElementById("lock-btn"),
   dragLayer: document.getElementById("drag-layer"),
 };
 
-let settings = null;
+/** Configuração do chat desta janela. */
+let config = null;
 let moveMode = false;
 
 /* ------------------------------------------------------------------ */
 /* Configurações                                                       */
 /* ------------------------------------------------------------------ */
 
-function applySettings(next) {
-  const previousChannel = settings ? settings.channel : null;
-  settings = next;
+function applyChat(next) {
+  const previousChannel = config ? config.channel : null;
+  config = next;
 
   document.documentElement.style.setProperty("--chat-opacity", String(next.opacity));
   document.documentElement.style.setProperty("--font-size", `${next.font_size}px`);
@@ -39,6 +47,11 @@ function applySettings(next) {
 
   el.body.classList.toggle("highlight-mentions", next.highlight_channel_mentions);
   el.body.classList.toggle("no-header", !next.show_header);
+
+  // Só aparece em modo mover, e é o que diferencia uma janela da outra na hora
+  // de arrumar o layout. Fora do modo mover a faixa do topo é a assinatura, que
+  // vai ao ar na live: o nome do chat é anotação sua e não entra lá.
+  el.bannerChat.textContent = next.name;
 
   trimMessages();
   // Fonte, assinatura e teto de mensagens mudam a altura do conteúdo sem mexer
@@ -105,18 +118,24 @@ function pinToBottom() {
 new ResizeObserver(pinToBottom).observe(el.chat);
 
 function trimMessages() {
-  const max = settings ? settings.max_messages : 80;
+  const max = config ? config.max_messages : 80;
   while (el.chat.children.length > max) {
     el.chat.removeChild(el.chat.firstChild);
   }
 }
 
-/** A mensagem cita o canal? Ex.: `@rubini`, mas não `@rubinizinho`. */
-function mentionsChannel(text) {
-  const channel = settings && settings.channel;
-  if (!channel) return false;
+/** O `@` que este chat destaca: o configurado ou, na falta dele, o canal. */
+function handle() {
+  if (!config) return "";
+  return config.mention || config.channel;
+}
 
-  const needle = `@${channel}`;
+/** A mensagem cita o handle deste chat? Ex.: `@rubini`, mas não `@rubinizinho`. */
+function mentionsHandle(text) {
+  const target = handle();
+  if (!target) return false;
+
+  const needle = `@${target}`;
   const haystack = text.toLowerCase();
 
   for (let from = 0; ; from += 1) {
@@ -143,7 +162,7 @@ function addMessage(tags, text, isAction) {
 
   // A classe é sempre aplicada; quem decide se ela pinta algo é a classe do
   // <body>. Assim o botão da configuração afeta o que já está na tela.
-  if (mentionsChannel(text)) {
+  if (mentionsHandle(text)) {
     line.classList.add("mentions-channel");
   }
 
@@ -309,12 +328,24 @@ document.addEventListener("keydown", (event) => {
 /* Boot                                                                */
 /* ------------------------------------------------------------------ */
 
-listen("settings-changed", (event) => applySettings(event.payload));
+/* O `target` não é opcional aqui. O backend manda o `chat-changed` de cada chat
+ * só para a janela dele (`emit_to`), mas um `listen` sem alvo é registrado como
+ * `Any`, e no Tauri o ouvinte `Any` recebe *todo* emit — inclusive os
+ * endereçados a outra janela. Sem esta linha, cada overlay aplicava também a
+ * configuração dos vizinhos: como o canal vinha diferente, limpava as próprias
+ * mensagens e reconectava no canal do outro, e no fim as janelas mostravam
+ * todas o mesmo chat.
+ *
+ * Os dois eventos abaixo são do app inteiro e continuam sem alvo de propósito:
+ * o modo mover e o aviso de inatividade valem para todas as janelas juntas. */
+listen("chat-changed", (event) => applyChat(event.payload), {
+  target: appWindow.label,
+});
 listen("move-mode", (event) => setMoveMode(event.payload.active));
 listen("move-idle-warning", (event) => setWarning(event.payload.active));
 
-invoke("get_settings")
-  .then(applySettings)
+invoke("get_chat")
+  .then(applyChat)
   .catch((err) => setStatus(`Não foi possível ler as configurações: ${err}`));
 
 invoke("is_move_mode")

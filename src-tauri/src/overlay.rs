@@ -1,6 +1,11 @@
 //! Criação das janelas e todo o ciclo do "modo mover".
+//!
+//! Cada chat do perfil ativo tem uma janela própria, de label `overlay-<id>`.
+//! O modo mover, por outro lado, é do app inteiro: ele desliga o click-through
+//! de todas as janelas de uma vez, porque o risco que ele cria (cliques que não
+//! chegam no jogo) não é de uma janela específica — é da tela.
 
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
@@ -11,30 +16,35 @@ use tauri::{
 };
 
 use crate::platform;
-use crate::settings::{self, Settings};
+use crate::settings::{self, Chat, Store};
 
-pub const OVERLAY_LABEL: &str = "overlay";
 pub const CONFIG_LABEL: &str = "config";
+/// Prefixo do label das janelas de overlay. O que vem depois é o id do chat.
+/// A capability em `capabilities/default.json` usa o glob `overlay-*`.
+pub const OVERLAY_PREFIX: &str = "overlay-";
 
 // Eventos emitidos para as webviews.
-pub const EV_SETTINGS: &str = "settings-changed";
+/// Estado completo (perfis e chats). Vai para a janela de configurações.
+pub const EV_STATE: &str = "state-changed";
+/// Configuração de um chat só. Vai apenas para a janela daquele chat.
+pub const EV_CHAT: &str = "chat-changed";
 pub const EV_MOVE_MODE: &str = "move-mode";
 pub const EV_IDLE_WARNING: &str = "move-idle-warning";
 
 pub struct AppState {
-    pub settings: Mutex<Settings>,
-    /// true = click-through desligado, janela interativa.
+    pub store: Mutex<Store>,
+    /// true = click-through desligado, janelas interativas.
     pub move_mode: AtomicBool,
-    /// Último instante em que houve movimento (drag, resize ou mouse sobre a janela).
+    /// Último instante em que houve movimento (drag, resize ou mouse sobre uma janela).
     pub last_activity: Mutex<Instant>,
     /// Evita re-emitir o aviso a cada tick do watchdog.
     pub warned: AtomicBool,
 }
 
 impl AppState {
-    pub fn new(settings: Settings) -> Self {
+    pub fn new(store: Store) -> Self {
         Self {
-            settings: Mutex::new(settings),
+            store: Mutex::new(store),
             move_mode: AtomicBool::new(false),
             last_activity: Mutex::new(Instant::now()),
             warned: AtomicBool::new(false),
@@ -53,39 +63,124 @@ pub struct IdleWarningPayload {
     pub active: bool,
 }
 
-pub fn overlay_window(app: &AppHandle) -> Option<WebviewWindow> {
-    app.get_webview_window(OVERLAY_LABEL)
+/// Label de uma janela nova: `overlay-<id do chat>-<geração>`.
+///
+/// A geração não é enfeite. O `destroy()` de uma janela só agenda a remoção — o
+/// label continua no manager do Tauri até o event loop processar o evento
+/// `Destroyed`. Se o label fosse só `overlay-<id>`, trocar de perfil e voltar
+/// depressa cairia em uma de duas armadilhas: ou o label antigo ainda estaria
+/// lá e o chat ficaria sem janela nenhuma, ou a criação falharia por label
+/// repetido. Com um label novo a cada criação, esse encontro não existe.
+fn next_overlay_label(chat_id: &str) -> String {
+    static GENERATION: AtomicU64 = AtomicU64::new(0);
+    let generation = GENERATION.fetch_add(1, Ordering::Relaxed);
+    format!("{OVERLAY_PREFIX}{chat_id}-{generation}")
 }
 
-pub fn create_overlay(app: &AppHandle, s: &Settings) -> Result<WebviewWindow, String> {
-    let window =
-        WebviewWindowBuilder::new(app, OVERLAY_LABEL, WebviewUrl::App("overlay.html".into()))
-            .title("Chat Overlay")
-            .decorations(false)
-            .transparent(true)
-            .always_on_top(true)
-            .skip_taskbar(true)
-            .resizable(true)
-            .shadow(false)
-            .focused(false)
-            .visible(false)
-            .inner_size(s.width as f64, s.height as f64)
-            .build()
-            .map_err(|e| format!("criando overlay: {e}"))?;
+/// Id do chat a partir do label. `None` para qualquer janela que não seja um
+/// overlay — a de configurações, por exemplo.
+pub fn chat_id_of(label: &str) -> Option<&str> {
+    let rest = label.strip_prefix(OVERLAY_PREFIX)?;
+    // O id não tem `-` (garantido pelo `sanitize`), então o último separa a
+    // geração e o que vem antes é o id inteiro.
+    rest.rsplit_once('-').map(|(id, _generation)| id)
+}
+
+pub fn is_overlay_label(label: &str) -> bool {
+    label.starts_with(OVERLAY_PREFIX)
+}
+
+/// Todas as janelas de overlay abertas, com o id do chat de cada uma.
+pub fn chat_windows(app: &AppHandle) -> Vec<(String, WebviewWindow)> {
+    app.webview_windows()
+        .into_iter()
+        .filter_map(|(label, window)| chat_id_of(&label).map(|id| (id.to_string(), window)))
+        .collect()
+}
+
+pub fn chat_window(app: &AppHandle, chat_id: &str) -> Option<WebviewWindow> {
+    chat_windows(app)
+        .into_iter()
+        .find(|(id, _)| id == chat_id)
+        .map(|(_, window)| window)
+}
+
+fn create_chat_window(app: &AppHandle, chat: &Chat) -> Result<WebviewWindow, String> {
+    let window = WebviewWindowBuilder::new(
+        app,
+        next_overlay_label(&chat.id),
+        WebviewUrl::App("overlay.html".into()),
+    )
+    .title(format!("Chat Overlay — {}", chat.name))
+    .decorations(false)
+    .transparent(true)
+    .always_on_top(true)
+    .skip_taskbar(true)
+    .resizable(true)
+    .shadow(false)
+    .focused(false)
+    .visible(false)
+    .inner_size(chat.width as f64, chat.height as f64)
+    .build()
+    .map_err(|e| format!("criando overlay de {}: {e}", chat.name))?;
 
     // Posição/tamanho em pixels físicos: é assim que lemos de volta na hora de
     // salvar, então usar a mesma unidade nos dois lados evita deriva em
     // monitores com escala diferente de 100%.
-    let _ = window.set_position(PhysicalPosition::new(s.x, s.y));
-    let _ = window.set_size(PhysicalSize::new(s.width, s.height));
+    let _ = window.set_position(PhysicalPosition::new(chat.x, chat.y));
+    let _ = window.set_size(PhysicalSize::new(chat.width, chat.height));
 
-    platform::apply_click_through(&window, true)?;
+    // Uma janela criada com o modo mover já ligado (chat adicionado no meio da
+    // arrumação) nasce interativa, como as outras.
+    platform::apply_click_through(&window, !is_move_mode(app))?;
     platform::raise_to_top(&window)?;
 
-    if s.overlay_visible {
+    if chat.visible {
         let _ = window.show();
     }
     Ok(window)
+}
+
+/// Deixa as janelas abertas iguais à lista de chats do perfil ativo: fecha o
+/// que sobrou, cria o que falta. É o único caminho para criar/destruir overlay,
+/// então trocar de perfil, adicionar e remover chat passam todos por aqui.
+pub fn sync_windows(app: &AppHandle) -> Result<(), String> {
+    let chats: Vec<Chat> = current_store(app).active_chats().to_vec();
+
+    for (id, window) in chat_windows(app) {
+        if !chats.iter().any(|c| c.id == id) {
+            // `destroy` e não `close`: `close` só pede o fechamento, e a janela
+            // ainda existiria se o mesmo label fosse recriado em seguida.
+            let _ = window.destroy();
+        }
+    }
+
+    for chat in &chats {
+        match chat_window(app, &chat.id) {
+            Some(window) => {
+                let _ = window.set_title(&format!("Chat Overlay — {}", chat.name));
+            }
+            None => {
+                create_chat_window(app, chat)?;
+            }
+        }
+    }
+
+    push_chats(app);
+    crate::tray::sync_menu(app);
+    Ok(())
+}
+
+/// Manda para cada janela de overlay a configuração do chat dela, e o estado
+/// completo para a janela de configurações.
+pub fn push_chats(app: &AppHandle) {
+    let store = current_store(app);
+    for (id, window) in chat_windows(app) {
+        if let Some(chat) = store.chat(&id) {
+            let _ = app.emit_to(window.label(), EV_CHAT, chat.clone());
+        }
+    }
+    let _ = app.emit(EV_STATE, store);
 }
 
 pub fn open_config(app: &AppHandle) -> Result<(), String> {
@@ -97,38 +192,82 @@ pub fn open_config(app: &AppHandle) -> Result<(), String> {
     }
     let win = WebviewWindowBuilder::new(app, CONFIG_LABEL, WebviewUrl::App("config.html".into()))
         .title("FLS Chat Overlay — Configurações")
-        .inner_size(480.0, 660.0)
-        .min_inner_size(420.0, 480.0)
+        .inner_size(520.0, 700.0)
+        .min_inner_size(440.0, 480.0)
         .resizable(true)
         .build()
         .map_err(|e| format!("criando janela de config: {e}"))?;
-    let _ = win.set_size(LogicalSize::new(480.0, 660.0));
+    let _ = win.set_size(LogicalSize::new(520.0, 700.0));
     let _ = win.set_focus();
     Ok(())
 }
 
-pub fn set_overlay_visible(app: &AppHandle, visible: bool) -> Result<(), String> {
-    let Some(win) = overlay_window(app) else {
-        return Ok(());
+/// Alguma janela de overlay está na tela?
+pub fn any_visible(app: &AppHandle) -> bool {
+    chat_windows(app)
+        .iter()
+        .any(|(_, w)| w.is_visible().unwrap_or(false))
+}
+
+/// Mostra ou esconde a janela de um chat. O estado vai para o disco: é ele que
+/// decide o que aparece na próxima abertura do app.
+pub fn set_chat_visible(app: &AppHandle, chat_id: &str, visible: bool) -> Result<(), String> {
+    let Some(window) = chat_window(app, chat_id) else {
+        return Err("esse chat não está aberto".into());
     };
+
     if visible {
-        win.show().map_err(|e| e.to_string())?;
-        platform::raise_to_top(&win)?;
+        window.show().map_err(|e| e.to_string())?;
+        platform::raise_to_top(&window)?;
     } else {
-        // Ocultar durante o modo mover deixaria o usuário sem como travar.
-        if is_move_mode(app) {
+        // Esconder a última janela durante o modo mover deixaria o usuário sem
+        // como travar: não sobraria nada na tela para clicar.
+        let last_one = chat_windows(app)
+            .iter()
+            .filter(|(id, w)| id != chat_id && w.is_visible().unwrap_or(false))
+            .count()
+            == 0;
+        if last_one && is_move_mode(app) {
             set_move_mode(app, false)?;
         }
-        win.hide().map_err(|e| e.to_string())?;
+        window.hide().map_err(|e| e.to_string())?;
     }
 
+    if let Some(chat) = app
+        .state::<AppState>()
+        .store
+        .lock()
+        .unwrap()
+        .chat_mut(chat_id)
     {
-        let state = app.state::<AppState>();
-        let mut s = state.settings.lock().unwrap();
-        s.overlay_visible = visible;
+        chat.visible = visible;
     }
     persist(app)?;
-    let _ = app.emit(EV_SETTINGS, current_settings(app));
+    push_chats(app);
+    crate::tray::sync_menu(app);
+    Ok(())
+}
+
+/// Mostra ou esconde todos os overlays do perfil ativo. É o que a bandeja usa.
+pub fn set_all_visible(app: &AppHandle, visible: bool) -> Result<(), String> {
+    if !visible && is_move_mode(app) {
+        set_move_mode(app, false)?;
+    }
+
+    for (id, window) in chat_windows(app) {
+        if visible {
+            let _ = window.show();
+            let _ = platform::raise_to_top(&window);
+        } else {
+            let _ = window.hide();
+        }
+        if let Some(chat) = app.state::<AppState>().store.lock().unwrap().chat_mut(&id) {
+            chat.visible = visible;
+        }
+    }
+
+    persist(app)?;
+    push_chats(app);
     crate::tray::sync_menu(app);
     Ok(())
 }
@@ -146,23 +285,32 @@ pub fn note_activity(app: &AppHandle) {
     }
 }
 
-/// Liga (`true`) ou trava (`false`) o modo mover.
+/// Liga (`true`) ou trava (`false`) o modo mover, em todas as janelas juntas.
 pub fn set_move_mode(app: &AppHandle, active: bool) -> Result<(), String> {
-    let Some(win) = overlay_window(app) else {
-        return Err("overlay não existe".into());
-    };
+    let windows = chat_windows(app);
+    if windows.is_empty() {
+        return Err("nenhum chat aberto".into());
+    }
 
-    // Não faz sentido mover algo invisível.
-    if active && !win.is_visible().unwrap_or(false) {
-        win.show().map_err(|e| e.to_string())?;
-        let state = app.state::<AppState>();
-        let mut s = state.settings.lock().unwrap();
-        s.overlay_visible = true;
+    // Não faz sentido mover algo invisível — mas também não faz sentido
+    // reaparecer com um chat que o usuário escondeu de propósito. Só quando
+    // *nada* está na tela o modo mover traz tudo de volta.
+    if active && !any_visible(app) {
+        for (id, window) in &windows {
+            let _ = window.show();
+            if let Some(chat) = app.state::<AppState>().store.lock().unwrap().chat_mut(id) {
+                chat.visible = true;
+            }
+        }
     }
 
     // click-through é exatamente o inverso do modo mover.
-    platform::apply_click_through(&win, !active)?;
-    platform::raise_to_top(&win)?;
+    for (_, window) in &windows {
+        if window.is_visible().unwrap_or(false) {
+            platform::apply_click_through(window, !active)?;
+            platform::raise_to_top(window)?;
+        }
+    }
 
     let idle_warning_secs = {
         let state = app.state::<AppState>();
@@ -172,19 +320,24 @@ pub fn set_move_mode(app: &AppHandle, active: bool) -> Result<(), String> {
         // O binding não é enfeite: como última expressão do bloco, o MutexGuard
         // temporário sobreviveria ao `state` que ele empresta. Nomear o valor
         // solta o guard aqui, antes do fim do bloco.
-        let secs = state.settings.lock().unwrap().idle_warning_secs;
+        let secs = state.store.lock().unwrap().idle_warning_secs;
         secs
     };
 
     if active {
-        let _ = win.set_focus();
+        if let Some((_, window)) = windows
+            .iter()
+            .find(|(_, w)| w.is_visible().unwrap_or(false))
+        {
+            let _ = window.set_focus();
+        }
     } else {
-        // Ao travar, a posição atual vira a posição salva.
-        capture_geometry(app, &win);
+        // Ao travar, a posição atual de cada janela vira a posição salva.
+        capture_geometry(app);
     }
     persist(app)?;
 
-    let _ = app.emit(EV_SETTINGS, current_settings(app));
+    push_chats(app);
     let _ = app.emit(EV_IDLE_WARNING, IdleWarningPayload { active: false });
     let _ = app.emit(
         EV_MOVE_MODE,
@@ -201,28 +354,36 @@ pub fn toggle_move_mode(app: &AppHandle) -> Result<(), String> {
     set_move_mode(app, !is_move_mode(app))
 }
 
-/// Copia posição/tamanho atuais da janela para o estado em memória.
-pub fn capture_geometry(app: &AppHandle, win: &WebviewWindow) {
+/// Copia posição/tamanho atuais de cada janela aberta para o estado em memória.
+pub fn capture_geometry(app: &AppHandle) {
+    let windows = chat_windows(app);
     let state = app.state::<AppState>();
-    let mut s = state.settings.lock().unwrap();
-    if let Ok(pos) = win.outer_position() {
-        s.x = pos.x;
-        s.y = pos.y;
+    let mut store = state.store.lock().unwrap();
+    for (id, window) in windows {
+        let position = window.outer_position().ok();
+        let size = window.inner_size().ok();
+        let Some(chat) = store.chat_mut(&id) else {
+            continue;
+        };
+        if let Some(position) = position {
+            chat.x = position.x;
+            chat.y = position.y;
+        }
+        if let Some(size) = size {
+            chat.width = size.width;
+            chat.height = size.height;
+        }
+        chat.sanitize();
     }
-    if let Ok(size) = win.inner_size() {
-        s.width = size.width;
-        s.height = size.height;
-    }
-    s.sanitize();
 }
 
 pub fn persist(app: &AppHandle) -> Result<(), String> {
-    let snapshot = app.state::<AppState>().settings.lock().unwrap().clone();
+    let snapshot = app.state::<AppState>().store.lock().unwrap().clone();
     settings::save(app, &snapshot)
 }
 
-pub fn current_settings(app: &AppHandle) -> Settings {
-    app.state::<AppState>().settings.lock().unwrap().clone()
+pub fn current_store(app: &AppHandle) -> Store {
+    app.state::<AppState>().store.lock().unwrap().clone()
 }
 
 /// Watchdog do modo mover.
@@ -243,7 +404,7 @@ pub fn spawn_watchdog(app: AppHandle) {
             };
 
             if state.move_mode.load(Ordering::SeqCst) {
-                let idle_secs = state.settings.lock().unwrap().idle_warning_secs;
+                let idle_secs = state.store.lock().unwrap().idle_warning_secs;
                 let idle_for = state.last_activity.lock().unwrap().elapsed();
                 if idle_for >= Duration::from_secs(idle_secs)
                     && !state.warned.swap(true, Ordering::SeqCst)
@@ -254,16 +415,18 @@ pub fn spawn_watchdog(app: AppHandle) {
 
             // Aproximadamente a cada 3 segundos.
             if ticks % 8 == 0 {
-                if let Some(win) = overlay_window(&app) {
-                    if win.is_visible().unwrap_or(false) {
-                        let _ = platform::raise_to_top(&win);
-                        // Reafirma o click-through: no Windows a flag se perde
-                        // em algumas transições do WebView2, e o sintoma
-                        // (overlay engolindo cliques do jogo) é justamente o
-                        // que este app não pode deixar acontecer.
-                        if !state.move_mode.load(Ordering::SeqCst) {
-                            let _ = platform::apply_click_through(&win, true);
-                        }
+                let move_mode = state.move_mode.load(Ordering::SeqCst);
+                for (_, window) in chat_windows(&app) {
+                    if !window.is_visible().unwrap_or(false) {
+                        continue;
+                    }
+                    let _ = platform::raise_to_top(&window);
+                    // Reafirma o click-through: no Windows a flag se perde em
+                    // algumas transições do WebView2, e o sintoma (overlay
+                    // engolindo cliques do jogo) é justamente o que este app
+                    // não pode deixar acontecer.
+                    if !move_mode {
+                        let _ = platform::apply_click_through(&window, true);
                     }
                 }
             }

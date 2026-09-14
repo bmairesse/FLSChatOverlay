@@ -249,9 +249,33 @@ body.has-status #status {
   pointer-events: none;
 }
 
+/* O nome do chat desta janela. Não encolhe até o texto do aviso ter encolhido
+   primeiro: em janela estreita, saber qual overlay está sendo arrastado vale
+   mais do que ler o aviso inteiro, que ainda assim continua legível pelo
+   próprio roxo (ou vermelho) da faixa. */
+#banner-chat {
+  flex: none;
+  max-width: 45%;
+  padding: 2px 7px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Sem nome a pílula viraria um retângulo preto sem conteúdo — acontece na
+   janela recém-criada, antes da primeira configuração chegar. */
+#banner-chat:empty {
+  display: none;
+}
+
 #banner-text {
   flex: 1;
   min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 #lock-btn {

@@ -98,6 +98,138 @@ input[type="range"] {
   accent-color: var(--accent);
 }
 
+select {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font: inherit;
+  cursor: pointer;
+}
+
+select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: var(--accent);
+}
+
+/* Cabeçalho de grupo: separa o que é do chat selecionado do que vale para o
+   app inteiro. Sem essa linha os dois blocos viram uma lista só, e o usuário
+   não tem como saber o alcance de cada ajuste. */
+.group {
+  margin: 6px 0 -6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+/* ---------- lista de chats ---------- */
+
+.chat-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Uma linha por chat, e não abas lado a lado: o interruptor precisa cair
+   sempre no mesmo lugar. Em aba ele andaria junto com o nome, e acertar de
+   primeira o de um chat específico viraria mira em alvo móvel. */
+.chat-row {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+/* A metade que seleciona. Ocupa tudo que sobra da linha, então o alvo de
+   clique é a faixa inteira e não só as letras do nome. */
+.chat-pick {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 13px;
+}
+
+.chat-row.active .chat-pick {
+  border-color: var(--accent);
+  background: rgba(169, 112, 255, 0.22);
+  font-weight: 600;
+}
+
+.chat-row-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Encostado na direita: a coluna de canais fica alinhada e dá para varrer a
+   lista procurando um canal sem ler nome por nome. */
+.chat-row-channel {
+  flex: none;
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+/* Chat escondido: só o nome desbota. O interruptor fica com a cor cheia — é
+   ele que desfaz o estado, e apagá-lo junto esconderia justamente a saída. */
+.chat-row.off .chat-pick {
+  opacity: 0.45;
+}
+
+/* Interruptor de mostrar/esconder a janela daquele chat. Não seleciona nada:
+   ele age direto no chat da linha, que é o motivo de a lista existir. */
+.chat-toggle {
+  flex: none;
+  width: 48px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+.chat-toggle .knob {
+  width: 16px;
+  height: 16px;
+  margin-left: 4px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: margin-left 120ms ease, background-color 120ms ease;
+}
+
+.chat-toggle[aria-checked="true"] {
+  background: rgba(169, 112, 255, 0.3);
+  border-color: var(--accent);
+}
+
+.chat-toggle[aria-checked="true"] .knob {
+  /* Empurra o pino com a margem, não com `transform`: o valor já é o mesmo que
+     a transição anima, sem uma segunda propriedade para sair de sintonia. */
+  margin-left: 26px;
+  background: var(--accent);
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+button:disabled:hover {
+  border-color: var(--border);
+}
+
 /* Amostra de cor, não campo de texto: esticar pela linha toda só desperdiça
    espaço e desmancha a leitura da linha. */
 .row input[type="color"] {

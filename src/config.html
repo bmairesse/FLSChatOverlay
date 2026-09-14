@@ -13,6 +13,65 @@
 
     <main>
       <section>
+        <label for="profile-select">Perfil</label>
+        <div class="row">
+          <select id="profile-select"></select>
+          <button id="profile-add" type="button">Novo</button>
+          <button id="profile-dup" type="button">Duplicar</button>
+          <button id="profile-del" type="button">Excluir</button>
+        </div>
+        <input
+          id="profile-name"
+          type="text"
+          placeholder="Nome do perfil"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <p class="hint">
+          Cada perfil tem os seus próprios chats, com posição e aparência
+          próprias. Trocar de perfil troca todos os overlays de uma vez — dá
+          para ter um perfil por jogo, ou um para a live e outro para assistir.
+          Também dá para trocar pela bandeja, sem abrir esta janela.
+        </p>
+      </section>
+
+      <section>
+        <label>Chats deste perfil</label>
+        <ul id="chat-list" class="chat-list"></ul>
+        <div class="row">
+          <button id="chat-add" type="button">Adicionar chat</button>
+          <button id="chat-del" type="button">Remover</button>
+        </div>
+        <p class="hint">
+          Cada chat é uma janela de overlay própria, com o seu canal e a sua
+          configuração. O interruptor da direita mostra e esconde a janela
+          daquele chat na hora, sem precisar selecionar nada. Clicar no nome
+          seleciona o chat — é dele que tratam os ajustes abaixo.
+        </p>
+      </section>
+
+      <!-- Logo abaixo dos chats de propósito: são as duas ações usadas no meio
+           de uma partida, quando rolar a janela atrás delas é o que atrapalha. -->
+      <section class="actions">
+        <button id="move-btn" type="button">Ativar mover</button>
+        <button id="visible-btn" type="button">Ocultar overlays</button>
+      </section>
+
+      <h2 class="group" id="chat-heading">Chat selecionado</h2>
+
+      <section>
+        <label for="chat-name">Nome do chat</label>
+        <input
+          id="chat-name"
+          type="text"
+          placeholder="Chat 1"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <p class="hint">Só para você se achar aqui — não aparece no overlay.</p>
+      </section>
+
+      <section>
         <label for="channel">Canal da Twitch</label>
         <div class="row">
           <input
@@ -30,11 +89,21 @@
         </p>
       </section>
 
-      <!-- Logo abaixo do canal de propósito: são as duas ações usadas no meio
-           de uma partida, quando rolar a janela atrás delas é o que atrapalha. -->
-      <section class="actions">
-        <button id="move-btn" type="button">Ativar mover</button>
-        <button id="visible-btn" type="button">Ocultar overlay</button>
+      <section>
+        <label for="mention">Seu @ neste chat</label>
+        <input
+          id="mention"
+          type="text"
+          placeholder="(vazio = o próprio canal)"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <p class="hint">
+          É o nome destacado nas mensagens deste chat. Deixe vazio para destacar
+          menções ao dono do canal; preencha com o <strong>seu</strong> nome da
+          Twitch para ver quando falarem com você na live de outra pessoa. Cada
+          chat pode ter um @ diferente.
+        </p>
       </section>
 
       <section>
@@ -74,10 +143,10 @@
       <section>
         <label class="check" for="highlight-mentions">
           <input id="highlight-mentions" type="checkbox" />
-          Destacar mensagens que citam o canal
+          Destacar mensagens que citam o @ deste chat
         </label>
         <p class="hint">
-          Linhas com <code>@seucanal</code> ganham uma marca lateral, como no
+          Linhas com <code>@seunome</code> ganham uma marca lateral, como no
           chat do site. Mensagens realçadas com pontos do canal são sempre
           marcadas, independentemente desta opção.
         </p>
@@ -86,7 +155,7 @@
       <section>
         <label class="check" for="show-header">
           <input id="show-header" type="checkbox" />
-          Mostrar a assinatura no topo do overlay
+          Mostrar a assinatura no topo deste overlay
         </label>
         <p class="hint">
           É a linha <code>FLS Chat Overlay — desenvolvido por oFadinha.com.br</code>
@@ -100,12 +169,15 @@
         <p class="hint">Mensagens mais antigas são descartadas para não pesar.</p>
       </section>
 
+      <h2 class="group">Todos os perfis</h2>
+
       <section>
         <label for="idle-secs">Aviso de modo mover após (segundos)</label>
         <input id="idle-secs" type="number" min="1" max="120" step="1" />
         <p class="hint">
-          Parado esse tempo com o click-through desligado, o overlay pisca em
+          Parado esse tempo com o click-through desligado, os overlays piscam em
           vermelho para você não esquecer que os cliques não passam para o jogo.
+          O modo mover vale para todas as janelas ao mesmo tempo.
         </p>
       </section>
 
@@ -125,7 +197,8 @@
         <p>
           O app conecta ao IRC público da Twitch como espectador anônimo
           (<code>justinfan</code>) e apenas <strong>lê</strong>. Ele não envia
-          mensagens, não pede OAuth e não tem acesso à sua conta.
+          mensagens, não pede OAuth e não tem acesso à sua conta. Cada chat
+          aberto é mais uma conexão anônima, nada além disso.
         </p>
         <p>
           Ele também não registra atalhos globais, não lê o teclado fora da
@@ -161,6 +234,21 @@
             Deixar ligada
           </button>
           <button id="header-disable" type="submit">Desligar mesmo assim</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <!-- Confirmação genérica para o que apaga configuração. Mesmo <dialog>
+         nativo, com o texto trocado por quem chama. -->
+    <dialog id="confirm-dialog">
+      <form method="dialog">
+        <h2 id="confirm-title"></h2>
+        <p id="confirm-text"></p>
+        <menu>
+          <button id="confirm-cancel" type="submit" class="primary" autofocus>
+            Cancelar
+          </button>
+          <button id="confirm-ok" type="submit">Confirmar</button>
         </menu>
       </form>
     </dialog>
