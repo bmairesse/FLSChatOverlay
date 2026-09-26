@@ -20,6 +20,8 @@ pub struct ChatPatch {
     pub highlight_channel_mentions: Option<bool>,
     pub max_messages: Option<u32>,
     pub show_header: Option<bool>,
+    pub fade_secs: Option<u64>,
+    pub fade_percent: Option<u32>,
 }
 
 /// Atualização parcial do que é do app inteiro, não de um chat.
@@ -119,6 +121,12 @@ pub fn save_chat(app: AppHandle, id: String, patch: ChatPatch) -> Result<Store, 
         }
         if let Some(v) = patch.show_header {
             chat.show_header = v;
+        }
+        if let Some(v) = patch.fade_secs {
+            chat.fade_secs = v;
+        }
+        if let Some(v) = patch.fade_percent {
+            chat.fade_percent = v;
         }
         Ok(())
     })

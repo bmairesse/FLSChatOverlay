@@ -10,6 +10,9 @@ joga em um monitor só e não pode desviar o olhar para a janela do navegador.
   seu `@` destacado
 - **Perfis**: quantos você quiser, cada um com o seu conjunto de chats — troque
   todos de uma vez pela bandeja
+- **Recolhe sozinho quando o chat esfria**: passados os segundos que você
+  definir sem mensagem nova, o overlay encolhe para uma faixa embaixo e devolve
+  o resto da tela para o jogo
 - Vive na bandeja do sistema
 - **Nenhum login na Twitch. Nenhum token. Nenhuma senha.**
 
@@ -177,7 +180,8 @@ A configuração é organizada em dois níveis:
   um na posição em que estava. A troca também está no menu da bandeja, em
   **Perfil**, sem precisar abrir a janela de configurações.
 - **Chat** — uma janela de overlay. Cada chat do perfil tem o seu canal, a sua
-  posição, o seu tamanho, a sua cor, a sua opacidade e o seu teto de mensagens.
+  posição, o seu tamanho, a sua cor, a sua opacidade, o seu teto de mensagens e
+  o seu recolhimento por inatividade.
   Dá para adicionar quantos quiser, e esconder um sem fechar os outros: na
   janela de configurações os chats do perfil aparecem em lista, cada um com um
   interruptor que mostra e esconde aquela janela na hora.
@@ -196,6 +200,33 @@ tela, não de uma janela.
 Quem já usava a versão 1.x não precisa fazer nada: o `settings.json` antigo é
 convertido na primeira abertura para um perfil chamado *Padrão* com um chat
 dentro, com todos os ajustes preservados.
+
+### Recolher por inatividade
+
+Dois ajustes, por chat, para o overlay não ficar ocupando a tela inteira quando
+o chat está parado:
+
+| Ajuste | O que é |
+| --- | --- |
+| **Recolher após** | Segundos sem mensagem nova até recolher. `0` desliga — é o padrão |
+| **Altura que fica visível** | Quanto da altura da janela sobra depois do recolhimento. O padrão é 100%, ou seja, nada muda |
+
+Exemplo: um chat de 100px de altura, com **5 segundos** e **30%**. Passados 5
+segundos sem ninguém escrever, a janela encolhe para os **30px de baixo** — as
+últimas mensagens — e o resto da área volta a ser só o jogo. Quando chega
+mensagem nova, ela volta ao tamanho cheio na hora.
+
+Nada é apagado: o que muda é só até onde a área visível vai. As mensagens
+continuam todas lá, e o teto de **Mensagens na tela** segue valendo igual.
+
+A assinatura do topo, quando ligada, desce junto e fica no topo da faixa
+recolhida — ela continua sendo a primeira linha acima das mensagens. Por isso a
+faixa nunca fica menor que a assinatura mais uma linha de mensagem: abaixo
+disso ela não mostraria nada de útil. Em janela baixa com porcentagem pequena,
+é esse piso que vale.
+
+Em **modo mover** o recolhimento é suspenso: você precisa da janela inteira
+para arrastar e redimensionar.
 
 ### Modo mover, em detalhe
 
@@ -298,6 +329,7 @@ API do Windows em `platform.rs`, e reafirmadas periodicamente pelo watchdog.
 - [x] Selos (badges) ao lado do nome, desenhados em vetor
 - [x] Destaque de mensagens realçadas e de menções ao canal
 - [x] Perfis e vários chats simultâneos, com `@` por chat
+- [x] Recolher o overlay quando o chat fica parado
 - [ ] Emotes
 - [ ] Selo de assinante personalizado do canal (exigiria a API autenticada da
       Twitch e uma segunda conexão de rede — por ora, selo genérico)

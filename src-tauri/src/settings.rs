@@ -56,6 +56,18 @@ pub struct Chat {
     /// única forma de quem vê a live descobrir de onde o overlay veio. Quem
     /// preferir a tela limpa pode desligar — a decisão é do usuário.
     pub show_header: bool,
+    /// Segundos sem mensagem nova até o overlay recolher para a faixa de baixo.
+    /// `0` desliga o recolhimento — é o padrão, e deixa o overlay exatamente
+    /// como era antes desta opção existir.
+    pub fade_secs: u64,
+    /// Quanto da altura da janela continua visível depois do fade, em por
+    /// cento. `100` também desliga: não sobra nada para esconder.
+    ///
+    /// A conta é sobre a janela inteira, não só sobre as mensagens: a
+    /// assinatura desce junto e passa a ocupar o topo da faixa que restou, de
+    /// forma que o que o usuário vê depois do fade mede exatamente esta
+    /// porcentagem da altura que ele configurou.
+    pub fade_percent: u32,
     /// Se a janela deste chat começa visível.
     pub visible: bool,
 }
@@ -78,6 +90,8 @@ impl Default for Chat {
             highlight_channel_mentions: true,
             max_messages: 80,
             show_header: true,
+            fade_secs: 0,
+            fade_percent: 100,
             visible: true,
         }
     }
@@ -97,6 +111,11 @@ impl Chat {
         self.name_outline_color =
             normalize_hex_color(&self.name_outline_color, DEFAULT_NAME_OUTLINE_COLOR);
         self.max_messages = self.max_messages.clamp(10, 500);
+        self.fade_secs = self.fade_secs.min(600);
+        // O piso não é 0: uma faixa de 1% some junto com as mensagens e o
+        // resultado é indistinguível de um overlay quebrado. Quem quer a tela
+        // limpa desliga a janela pela bandeja, que é a ferramenta para isso.
+        self.fade_percent = self.fade_percent.clamp(5, 100);
     }
 }
 

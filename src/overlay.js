@@ -44,6 +44,7 @@ function applyChat(next) {
   // Valores já validados como hex pelo sanitize() do Rust.
   document.documentElement.style.setProperty("--text-color", next.text_color);
   document.documentElement.style.setProperty("--name-outline", next.name_outline_color);
+  document.documentElement.style.setProperty("--fade-percent", `${next.fade_percent}%`);
 
   el.body.classList.toggle("highlight-mentions", next.highlight_channel_mentions);
   el.body.classList.toggle("no-header", !next.show_header);
@@ -58,6 +59,10 @@ function applyChat(next) {
   // na caixa do #chat, então o ResizeObserver não é acionado: quem ancora
   // nestes casos é esta chamada.
   pinToBottom();
+
+  // Mexer na configuração mostra a janela inteira: quem está ajustando o
+  // overlay precisa ver o efeito do que acabou de mudar, não a faixa recolhida.
+  resetFade();
 
   if (next.channel !== previousChannel) {
     connect(next.channel);
@@ -122,6 +127,39 @@ function trimMessages() {
   while (el.chat.children.length > max) {
     el.chat.removeChild(el.chat.firstChild);
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Fade por inatividade                                                */
+/* ------------------------------------------------------------------ */
+
+/* Passado o tempo configurado sem mensagem nova, o overlay se recolhe para uma
+ * faixa na parte de baixo e devolve o resto da tela para o jogo. As mensagens
+ * continuam todas lá: o que muda é só até onde a área visível vai — a CSS cuida
+ * da medida, daqui sai apenas o "agora sim" e o "agora não".
+ *
+ * A contagem é reiniciada por qualquer mensagem, inclusive as de outra pessoa
+ * que já estavam chegando: o gatilho é o chat parar, não o usuário parar. */
+
+let fadeTimer = null;
+
+/** Desligado quando o tempo é 0 ou quando não há o que esconder (100%). */
+function fadeEnabled() {
+  return Boolean(config) && config.fade_secs > 0 && config.fade_percent < 100;
+}
+
+/** Mostra a janela inteira e recomeça a contagem do zero. */
+function resetFade() {
+  clearTimeout(fadeTimer);
+  fadeTimer = null;
+  el.body.classList.remove("faded");
+
+  // Em modo mover a janela fica sempre inteira: é ela que o usuário está
+  // arrastando, e a moldura e as alças ficam justamente na parte que o
+  // recolhimento esconderia.
+  if (!fadeEnabled() || moveMode) return;
+
+  fadeTimer = setTimeout(() => el.body.classList.add("faded"), config.fade_secs * 1000);
 }
 
 /** O `@` que este chat destaca: o configurado ou, na falta dele, o canal. */
@@ -190,6 +228,7 @@ function addMessage(tags, text, isAction) {
   el.chat.appendChild(line);
   trimMessages();
   pinToBottom();
+  resetFade();
 }
 
 function setStatus(text) {
@@ -219,6 +258,7 @@ async function connect(channel) {
   }
 
   el.chat.replaceChildren();
+  resetFade();
 
   if (!channel) {
     setStatus("Nenhum canal configurado — abra as configurações na bandeja.");
@@ -274,6 +314,9 @@ function setMoveMode(active) {
     el.body.classList.remove("warn");
     el.bannerText.textContent = BANNER_IDLE;
   }
+  // Entrando, abre a janela inteira e para a contagem; saindo, recomeça do
+  // zero — quem acabou de posicionar o overlay quer olhar para ele.
+  resetFade();
 }
 
 function setWarning(active) {

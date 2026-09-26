@@ -11,6 +11,11 @@
      O #chat começa depois dela, então nenhuma mensagem alcança a assinatura. */
   --header-h: 24px;
   --banner-h: 34px;
+  /* Quanto da altura da janela sobra depois do fade por inatividade, e onde
+     fica a borda de cima dessa faixa. Fora do fade a faixa é a janela inteira,
+     então a borda está no topo e nada muda. */
+  --fade-percent: 100%;
+  --fade-top: 0px;
 }
 
 * {
@@ -39,7 +44,12 @@ body {
      container rolável o padding rola junto com o conteúdo, e era por isso que
      as mensagens passavam por cima da assinatura. Agora a borda de cima do
      #chat corta o que sobe. */
-  inset: var(--header-h) 0 0;
+  inset: calc(var(--fade-top) + var(--header-h)) 0 0;
+  /* Acompanha o recolhimento em vez de saltar para a faixa nova. O que é
+     animado é a borda de cima da caixa: as mensagens ficam ancoradas embaixo
+     (pinToBottom), então o que se vê é o topo da conversa sendo comido aos
+     poucos, e não o texto inteiro deslizando. */
+  transition: top 320ms ease;
   padding: 0 10px 8px;
   /* O corte seco na borda decepa a linha no meio da letra; a máscara faz a
      mensagem se dissolver ao sair, sem pintar nada por cima do jogo. */
@@ -47,6 +57,14 @@ body {
   mask-image: linear-gradient(to bottom, transparent 0, #000 10px);
   overflow-y: auto;
   overflow-x: hidden;
+  /* As mensagens moram na borda de baixo, mesmo quando são poucas e sobra
+     espaço. Num container de bloco elas encostariam no topo, e aí toda mudança
+     na borda de cima — recolher, ligar a assinatura, arrastar a alça — as
+     arrastaria junto, como se o chat inteiro trocasse de lugar. Ancoradas
+     embaixo, a única borda que importa é a de baixo, que nunca se move. */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
   opacity: var(--chat-opacity);
   font-size: var(--font-size);
   line-height: 1.35;
@@ -62,6 +80,10 @@ body {
 }
 
 .msg {
+  /* Item de flex column encolhe por padrão: sem isto, passando da altura da
+     caixa as linhas seriam espremidas umas contra as outras em vez de
+     transbordarem para a rolagem. */
+  flex: 0 0 auto;
   margin: 0 0 4px;
   word-wrap: break-word;
   overflow-wrap: anywhere;
@@ -145,7 +167,11 @@ body.highlight-mentions .msg.mentions-channel.highlighted,
   position: absolute;
   left: 0;
   right: 0;
-  top: 0;
+  /* A assinatura mora no topo da faixa visível, não no topo da janela: depois
+     do fade ela desce e continua sendo a primeira coisa acima das mensagens.
+     É a mesma variável que recua o #chat, então as duas não saem de sintonia. */
+  top: var(--fade-top);
+  transition: top 320ms ease;
   z-index: 4;
   /* Altura fixa amarrada à mesma variável que recua o #chat: a faixa
      reservada e a assinatura não têm como sair de sincronia. */
@@ -186,6 +212,23 @@ body.no-header {
 
 body.no-header #header {
   display: none;
+}
+
+/* ---------- fade por inatividade ---------- */
+
+/* Passado o tempo configurado sem mensagem nova, a janela se recolhe para uma
+   faixa na parte de baixo — onde estão as últimas mensagens — e devolve o
+   resto da tela para o jogo. Nada é apagado: só a borda de cima da área
+   visível desce, e ela volta assim que chega mensagem.
+   A classe é posta pelo overlay.js; aqui só mora a medida. */
+body.faded {
+  /* O segundo termo é o piso: numa janela baixa, ou com porcentagem pequena, a
+     faixa ainda cabe a assinatura e uma linha de mensagem. Sem ele o "fade"
+     viraria uma janela vazia, que é indistinguível de um overlay quebrado. */
+  --fade-top: min(
+    calc(100% - var(--fade-percent)),
+    calc(100% - var(--header-h) - 1.35 * var(--font-size))
+  );
 }
 
 /* ---------- status ---------- */
@@ -366,6 +409,11 @@ body.move-mode.warn #banner {
   body.move-mode.warn #frame,
   body.move-mode.warn #banner {
     animation: none;
+  }
+  /* O recolhimento passa a ser instantâneo: continua valendo, só não desliza. */
+  #chat,
+  #header {
+    transition: none;
   }
   body.move-mode.warn #frame {
     box-shadow: inset 0 0 22px 4px rgba(255, 59, 48, 0.5);

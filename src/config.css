@@ -226,6 +226,14 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* A altura do recolhimento só faz sentido com o recolhimento ligado. Fica
+   apagada em vez de sumir: um campo que some muda o layout de lugar e quem
+   estava olhando para ele perde a referência. */
+input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 button:disabled:hover {
   border-color: var(--border);
 }

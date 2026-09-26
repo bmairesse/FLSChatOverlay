@@ -37,6 +37,9 @@ const el = {
   headerDialog: document.getElementById("header-dialog"),
   headerDisable: document.getElementById("header-disable"),
   maxMessages: document.getElementById("max-messages"),
+  fadeSecs: document.getElementById("fade-secs"),
+  fadePercent: document.getElementById("fade-percent"),
+  fadePercentOut: document.getElementById("fade-percent-out"),
   idleSecs: document.getElementById("idle-secs"),
   moveBtn: document.getElementById("move-btn"),
   visibleBtn: document.getElementById("visible-btn"),
@@ -239,6 +242,18 @@ function renderChat(chat) {
   el.highlightMentions.checked = chat.highlight_channel_mentions;
   el.showHeader.checked = chat.show_header;
   el.maxMessages.value = chat.max_messages;
+  el.fadeSecs.value = chat.fade_secs;
+  el.fadePercent.value = chat.fade_percent;
+  renderFade(chat.fade_secs, chat.fade_percent);
+}
+
+/* O texto e o estado do slider saem daqui porque são redesenhados em dois
+ * momentos: quando o estado chega do Rust e enquanto o usuário arrasta, antes
+ * de qualquer gravação. */
+function renderFade(secs, percent) {
+  const off = Number(secs) === 0;
+  el.fadePercent.disabled = off;
+  el.fadePercentOut.textContent = off ? "recolhimento desligado" : `${percent}%`;
 }
 
 function renderButtons() {
@@ -451,6 +466,20 @@ el.headerDisable.addEventListener("click", () => {
 
 el.maxMessages.addEventListener("change", () => {
   saveChat({ max_messages: Number(el.maxMessages.value) }, "Salvo");
+});
+
+el.fadeSecs.addEventListener("change", () => {
+  const value = Number(el.fadeSecs.value);
+  // Antes de salvar: o slider precisa ligar ou desligar junto com o campo, e
+  // a resposta do Rust só chega depois da gravação.
+  renderFade(value, Number(el.fadePercent.value));
+  saveChat({ fade_secs: value }, value === 0 ? "Recolhimento desligado" : "Salvo");
+});
+
+el.fadePercent.addEventListener("input", () => {
+  const value = Number(el.fadePercent.value);
+  renderFade(Number(el.fadeSecs.value), value);
+  debouncedSave({ fade_percent: value });
 });
 
 /* ---------- campos do app ---------- */

@@ -169,6 +169,30 @@
         <p class="hint">Mensagens mais antigas são descartadas para não pesar.</p>
       </section>
 
+      <section>
+        <label for="fade-secs">Recolher após (segundos sem mensagem)</label>
+        <input id="fade-secs" type="number" min="0" max="600" step="1" />
+        <p class="hint">
+          <code>0</code> desliga — é o padrão, e o overlay fica sempre do
+          tamanho cheio. Com qualquer outro valor, passado esse tempo sem
+          mensagem nova o chat se recolhe para uma faixa embaixo e devolve o
+          resto da tela para o jogo. Volta inteiro assim que alguém escreve.
+        </p>
+      </section>
+
+      <section>
+        <label for="fade-percent">
+          Altura que fica visível ao recolher <output id="fade-percent-out"></output>
+        </label>
+        <input id="fade-percent" type="range" min="5" max="100" step="5" />
+        <p class="hint">
+          Porcentagem da altura desta janela. Num chat de 100px com 30%, sobram
+          os 30px de baixo — as últimas mensagens. Nenhuma mensagem é apagada:
+          só a área visível encolhe. A assinatura, quando ligada, desce junto e
+          continua no topo da faixa.
+        </p>
+      </section>
+
       <h2 class="group">Todos os perfis</h2>
 
       <section>
