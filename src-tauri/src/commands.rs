@@ -90,7 +90,11 @@ pub fn get_chat(app: AppHandle, window: Window) -> Result<Chat, String> {
 
 #[tauri::command]
 pub fn save_chat(app: AppHandle, id: String, patch: ChatPatch) -> Result<Store, String> {
-    mutate(&app, |store| {
+    // O nome do chat aparece no submenu "Centralizar na tela" da bandeja, e o
+    // nome automático sai do canal — as duas mudanças obrigam a remontar o
+    // menu. Lido antes do `mutate`, que consome o patch.
+    let renamed = patch.name.is_some() || patch.channel.is_some();
+    let updated = mutate(&app, |store| {
         let chat = store.chat_mut(&id).ok_or("chat não encontrado")?;
         if let Some(v) = patch.name {
             chat.name = v;
@@ -129,7 +133,11 @@ pub fn save_chat(app: AppHandle, id: String, patch: ChatPatch) -> Result<Store, 
             chat.fade_percent = v;
         }
         Ok(())
-    })
+    })?;
+    if renamed {
+        crate::tray::sync_menu(&app);
+    }
+    Ok(updated)
 }
 
 #[tauri::command]

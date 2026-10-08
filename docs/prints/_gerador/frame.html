@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>overlay shot</title>
+<!-- CSS real do app -->
+<link rel="stylesheet" href="../../../src/overlay.css" />
+<style>
+  /* Congela o pulso do aviso no pico, para o print não cair num quadro qualquer. */
+  body.freeze-pulse.move-mode.warn #frame,
+  body.freeze-pulse.move-mode.warn #banner {
+    animation-delay: -450ms;
+    animation-play-state: paused;
+  }
+</style>
+</head>
+<body>
+<script src="../../../src/badges.js"></script>
+<script src="./data.js"></script>
+<script>
+/* Harness de print: monta o corpo real do overlay.html, finge o backend Tauri
+ * e o tmi.js, e injeta mensagens de exemplo. Nada de rede, nada de Twitch. */
+
+const SCRIPTS = {
+  main: SCRIPT_MAIN, guest: SCRIPT_GUEST, calm: SCRIPT_CALM, action: SCRIPT_ACTION,
+};
+
+const DEFAULTS = {
+  id: "chat-0001", name: "Chat 1", channel: "ofadinha", mention: "",
+  opacity: 0.85, x: 0, y: 0, width: 380, height: 600, font_size: 14,
+  text_color: "#ffffff", name_outline_color: "#000000",
+  highlight_channel_mentions: true, max_messages: 80, show_header: true,
+  fade_secs: 0, fade_percent: 100, visible: true,
+};
+
+const raw = decodeURIComponent(location.hash.slice(1) || "%7B%7D");
+const opts = JSON.parse(raw);
+const cfg = Object.assign({}, DEFAULTS, opts.chat || {});
+
+let onConnected;
+const connected = new Promise((r) => (onConnected = r));
+
+window.tmi = {
+  Client: class {
+    constructor() { this.handlers = {}; }
+    on(event, fn) { this.handlers[event] = fn; }
+    async connect() {
+      if (this.handlers.connected) this.handlers.connected();
+      onConnected();
+    }
+    async disconnect() {}
+  },
+};
+
+window.__TAURI__ = {
+  core: {
+    invoke: async (cmd) => {
+      if (cmd === "get_chat") return cfg;
+      if (cmd === "is_move_mode") return Boolean(opts.move);
+      return null;
+    },
+  },
+  event: { listen: async () => () => {} },
+  window: { getCurrentWindow: () => ({ label: "overlay-" + cfg.id, startDragging: async () => {}, startResizeDragging: async () => {} }) },
+};
+
+async function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = reject;
+    document.body.appendChild(s);
+  });
+}
+
+(async () => {
+  // Corpo vindo do overlay.html de verdade, para o print não divergir do app.
+  const html = await (await fetch("../../../src/overlay.html")).text();
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  for (const s of doc.body.querySelectorAll("script")) s.remove();
+  document.body.innerHTML = doc.body.innerHTML;
+
+  await loadScript("../../../src/overlay.js");
+  await connected;
+
+  const list = SCRIPTS[opts.script || "main"] || SCRIPT_MAIN;
+  const take = opts.count ? list.slice(0, opts.count) : list;
+  for (const item of take) addMessage(item.tags, item.text, item.action);
+
+  if (opts.move) {
+    setMoveMode(true);
+    if (opts.warn) {
+      setWarning(true);
+      document.body.classList.add("freeze-pulse");
+    }
+  }
+  if (opts.status) setStatus(opts.status);
+  if (opts.faded) {
+    document.body.classList.add("faded");
+    // O recolhimento é uma transição de 320ms; sem isto o print pega o meio.
+    document.getElementById("chat").style.transition = "none";
+    document.getElementById("header").style.transition = "none";
+  }
+  document.documentElement.dataset.shotReady = "1";
+})();
+</script>
+</body>
+</html>

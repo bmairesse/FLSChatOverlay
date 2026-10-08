@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>overlay sozinho</title>
+<style>
+  /* Fundo transparente de ponta a ponta: o recorte final é só o overlay.
+     A página é grande de propósito — o headless não aceita janela pequena e
+     encolher aqui mudaria a largura em que o texto quebra. */
+  html, body { margin: 0; background: transparent; overflow: hidden; }
+  iframe { position: absolute; left: 0; top: 0; border: 0; background: transparent; }
+</style>
+</head>
+<body>
+<script>
+  const q = new URLSearchParams(location.search);
+  const payload = q.get("c") || "%7B%7D";
+  const f = document.createElement("iframe");
+  f.src = "./frame.html#" + payload;
+  f.style.width = (q.get("w") || 380) + "px";
+  f.style.height = (q.get("h") || 600) + "px";
+  document.body.appendChild(f);
+</script>
+</body>
+</html>

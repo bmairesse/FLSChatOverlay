@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>janela</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; font-family: "Segoe UI", sans-serif; }
+  body {
+    background: radial-gradient(120% 120% at 20% 0%, #2b2340 0%, #14101f 55%, #0a0812 100%);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .win {
+    width: 520px; border-radius: 10px; overflow: hidden;
+    box-shadow: 0 30px 70px rgba(0,0,0,0.65), 0 2px 8px rgba(0,0,0,0.5);
+    border: 1px solid #3a3a42;
+  }
+  .bar {
+    height: 32px; background: #1f1f23; color: #e8e8ee; display: flex; align-items: center;
+    padding: 0 0 0 12px; font-size: 12px; gap: 8px;
+  }
+  .bar .dot { width: 14px; height: 14px; border-radius: 3px; background: #a970ff; flex: none; }
+  .bar .t { flex: 1; }
+  .bar .btns { display: flex; }
+  .bar .btns span {
+    width: 44px; height: 32px; display: grid; place-items: center; color: #c9c9d2; font-size: 11px;
+  }
+  iframe { display: block; width: 520px; border: 0; background: #0e0e10; }
+</style>
+</head>
+<body>
+<div class="win">
+  <div class="bar">
+    <div class="dot"></div>
+    <div class="t">FLS Chat Overlay — Configurações</div>
+    <div class="btns"><span>&#8212;</span><span>&#9744;</span><span>&#10005;</span></div>
+  </div>
+  <iframe id="f" src="./config-shot.html"></iframe>
+</div>
+<script>
+  const h = new URLSearchParams(location.search).get("h") || "700";
+  document.getElementById("f").style.height = h + "px";
+</script>
+</body>
+</html>

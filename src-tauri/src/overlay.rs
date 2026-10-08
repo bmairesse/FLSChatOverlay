@@ -272,6 +272,82 @@ pub fn set_all_visible(app: &AppHandle, visible: bool) -> Result<(), String> {
     Ok(())
 }
 
+/// Centro do monitor em que a janela está, em pixels físicos.
+///
+/// Cai no monitor primário quando o Windows não sabe dizer em qual ela está —
+/// que é exatamente o caso de uma janela largada fora de qualquer tela, o
+/// motivo de este recurso existir.
+fn centered_position(window: &WebviewWindow) -> Result<PhysicalPosition<i32>, String> {
+    let monitor = match window
+        .current_monitor()
+        .map_err(|e| format!("monitor atual: {e}"))?
+    {
+        Some(monitor) => monitor,
+        None => window
+            .primary_monitor()
+            .map_err(|e| format!("monitor primário: {e}"))?
+            .ok_or("nenhum monitor disponível")?,
+    };
+
+    let origin = monitor.position();
+    let area = *monitor.size();
+    // `outer_size` e não a largura salva no chat: é a janela inteira que vai
+    // para o centro, e é a posição externa que o `set_position` move.
+    let size = window
+        .outer_size()
+        .map_err(|e| format!("tamanho da janela: {e}"))?;
+
+    Ok(PhysicalPosition::new(
+        origin.x + (area.width as i32 - size.width as i32) / 2,
+        origin.y + (area.height as i32 - size.height as i32) / 2,
+    ))
+}
+
+/// Põe no centro da tela a janela de um chat (`Some(id)`) ou de todos os chats
+/// do perfil ativo (`None`).
+///
+/// É o resgate de um overlay que não dá para arrastar de volta: quem desliga um
+/// monitor, troca a resolução ou muda o arranjo das telas fica com a janela
+/// numa coordenada que o mouse não alcança, e o modo mover não ajuda — não tem
+/// o que agarrar. Vale para janela escondida também: ela é movida onde está, e
+/// continua escondida.
+pub fn center_chats(app: &AppHandle, only: Option<&str>) -> Result<(), String> {
+    // Antes de mexer em qualquer coisa: um arrasto em andamento nas *outras*
+    // janelas seria perdido pelo `persist` do fim.
+    capture_geometry(app);
+
+    let windows: Vec<(String, WebviewWindow)> = chat_windows(app)
+        .into_iter()
+        .filter(|(id, _)| match only {
+            Some(wanted) => wanted == id,
+            None => true,
+        })
+        .collect();
+
+    if windows.is_empty() {
+        return Err("nenhum chat aberto".into());
+    }
+
+    for (id, window) in &windows {
+        let position = centered_position(window)?;
+        window
+            .set_position(position)
+            .map_err(|e| format!("centralizando {id}: {e}"))?;
+
+        // A posição nova é gravada a partir do valor calculado, não lida de
+        // volta da janela: fora do modo mover nada chamaria `capture_geometry`
+        // depois daqui, e o `set_position` pode ainda não ter sido processado.
+        if let Some(chat) = app.state::<AppState>().store.lock().unwrap().chat_mut(id) {
+            chat.x = position.x;
+            chat.y = position.y;
+        }
+    }
+
+    persist(app)?;
+    push_chats(app);
+    Ok(())
+}
+
 pub fn is_move_mode(app: &AppHandle) -> bool {
     app.state::<AppState>().move_mode.load(Ordering::SeqCst)
 }

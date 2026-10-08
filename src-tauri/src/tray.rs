@@ -20,6 +20,10 @@ const ID_VISIBLE: &str = "visible";
 const ID_QUIT: &str = "quit";
 /// Prefixo dos itens de perfil. O que vem depois é o id do perfil.
 const ID_PROFILE_PREFIX: &str = "profile:";
+/// Prefixo dos itens de centralizar. O que vem depois é o id do chat.
+/// Não colide com `ID_CENTER_ALL`: id de chat nunca tem `-`.
+const ID_CENTER_PREFIX: &str = "center:";
+const ID_CENTER_ALL: &str = "center-all";
 
 fn build_menu(app: &AppHandle) -> Result<Menu<Wry>, String> {
     let store = overlay::current_store(app);
@@ -47,6 +51,37 @@ fn build_menu(app: &AppHandle) -> Result<Menu<Wry>, String> {
         .collect();
     let profiles_menu =
         Submenu::with_items(app, "Perfil", true, &profile_refs).map_err(|e| e.to_string())?;
+
+    // Um item por chat do perfil ativo, e "todos" só quando há mais de um —
+    // com um chat só, as duas entradas fariam exatamente a mesma coisa.
+    let chats = store.active_chats();
+    let mut center_items: Vec<MenuItem<Wry>> = Vec::new();
+    for chat in chats {
+        center_items.push(
+            MenuItem::with_id(
+                app,
+                format!("{ID_CENTER_PREFIX}{}", chat.id),
+                &chat.name,
+                true,
+                None::<&str>,
+            )
+            .map_err(|e| e.to_string())?,
+        );
+    }
+    let center_sep = PredefinedMenuItem::separator(app).map_err(|e| e.to_string())?;
+    let center_all = MenuItem::with_id(app, ID_CENTER_ALL, "Todos os chats", true, None::<&str>)
+        .map_err(|e| e.to_string())?;
+
+    let mut center_refs: Vec<&dyn tauri::menu::IsMenuItem<Wry>> = center_items
+        .iter()
+        .map(|item| item as &dyn tauri::menu::IsMenuItem<Wry>)
+        .collect();
+    if chats.len() > 1 {
+        center_refs.push(&center_sep);
+        center_refs.push(&center_all);
+    }
+    let center_menu = Submenu::with_items(app, "Centralizar na tela", true, &center_refs)
+        .map_err(|e| e.to_string())?;
 
     let move_text = if overlay::is_move_mode(app) {
         "Travar posição"
@@ -76,6 +111,7 @@ fn build_menu(app: &AppHandle) -> Result<Menu<Wry>, String> {
             &sep_a,
             &profiles_menu,
             &move_item,
+            &center_menu,
             &visible_item,
             &sep_b,
             &quit_item,
@@ -135,8 +171,16 @@ fn handle_menu_event(app: &AppHandle, event: tauri::menu::MenuEvent) {
             return;
         }
 
+        if let Some(chat_id) = id.strip_prefix(ID_CENTER_PREFIX) {
+            if let Err(err) = overlay::center_chats(&app, Some(chat_id)) {
+                eprintln!("[tray] {err}");
+            }
+            return;
+        }
+
         let result = match id.as_str() {
             ID_CONFIG => overlay::open_config(&app),
+            ID_CENTER_ALL => overlay::center_chats(&app, None),
             ID_MOVE => overlay::toggle_move_mode(&app),
             ID_VISIBLE => overlay::set_all_visible(&app, !overlay::any_visible(&app)),
             ID_QUIT => {

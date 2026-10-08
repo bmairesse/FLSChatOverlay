@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>cena</title>
+<style>
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+  #scene { position: absolute; inset: 0; }
+  iframe { position: absolute; border: 0; background: transparent; }
+  /* Etiqueta usada só nas figuras comparativas, nunca nos prints limpos. */
+  .cap {
+    position: absolute; font-family: "Segoe UI", sans-serif; font-size: 20px; font-weight: 600;
+    color: #fff; background: rgba(0,0,0,0.62); padding: 7px 14px; border-radius: 6px;
+    letter-spacing: 0.01em;
+  }
+  .cap small { display: block; font-size: 14px; font-weight: 400; opacity: 0.8; margin-top: 2px; }
+</style>
+</head>
+<body>
+<div id="scene"></div>
+<script src="./scenes.js"></script>
+<script>
+const PRESETS = {
+  /* 0. Imagem de capa: cena menor, overlay proporcionalmente maior, para o
+        texto continuar legível em miniatura de README ou de post. */
+  hero: {
+    scene: "noite",
+    overlays: [
+      { left: 34, top: 34, chat: { width: 400, height: 650, font_size: 15, channel: "ofadinha" }, script: "main" },
+      { right: 34, bottom: 34, chat: { width: 330, height: 250, font_size: 14, channel: "fairyland_live", mention: "ofadinha" }, script: "guest" },
+    ],
+  },
+
+  /* 1. Como o app fica na configuração de fábrica. */
+  padrao: {
+    scene: "noite",
+    overlays: [{ left: 44, top: 44, chat: { width: 380, height: 600, channel: "ofadinha" }, script: "main" }],
+  },
+
+  /* 2. Fonte grande e opacidade cheia, sobre cenário claro: é onde o contorno
+        do texto mostra serviço. */
+  fonte_grande: {
+    scene: "dia",
+    overlays: [{
+      right: 48, top: 60,
+      chat: { width: 470, height: 580, font_size: 22, opacity: 1, channel: "ofadinha" },
+      script: "main",
+    }],
+  },
+
+  /* 3. Três chats ao mesmo tempo, cada um com canal, tamanho e @ próprios. */
+  tres_chats: {
+    scene: "noite",
+    overlays: [
+      { left: 40, top: 40, chat: { width: 360, height: 620, channel: "ofadinha", name: "Minha live" }, script: "main" },
+      { right: 40, top: 40, chat: { width: 350, height: 330, channel: "fairyland_live", mention: "ofadinha", name: "Live da parceira" }, script: "guest" },
+      { right: 40, bottom: 40, chat: { width: 350, height: 300, font_size: 17, channel: "canal_convidado", text_color: "#ffe9b3", name: "Mesa de RPG" }, script: "calm" },
+    ],
+  },
+
+  /* 4. Recolhido por inatividade: só a faixa de baixo continua na tela. */
+  recolhido: {
+    scene: "noite",
+    overlays: [{
+      left: 44, top: 44,
+      chat: { width: 380, height: 600, fade_secs: 20, fade_percent: 25, channel: "ofadinha" },
+      script: "main", faded: true,
+    }],
+  },
+
+  /* 5 e 6. Modo mover: moldura roxa, faixa de aviso e alças. */
+  modo_mover: {
+    scene: "noite",
+    overlays: [{
+      left: 44, top: 44,
+      chat: { width: 480, height: 600, channel: "ofadinha", name: "Minha live" },
+      script: "main", move: true,
+    }],
+  },
+  modo_mover_aviso: {
+    scene: "noite",
+    overlays: [{
+      left: 44, top: 44,
+      chat: { width: 480, height: 600, channel: "ofadinha", name: "Minha live" },
+      script: "main", move: true, warn: true,
+    }],
+  },
+
+  /* 7. Cores trocadas: texto dourado, contorno roxo no nome. */
+  cores: {
+    scene: "noite",
+    overlays: [{
+      left: 44, top: 44,
+      chat: { width: 380, height: 600, channel: "ofadinha", text_color: "#ffdf9b", name_outline_color: "#3b0a52" },
+      script: "main",
+    }],
+  },
+
+  /* 8. Sem a assinatura e em faixa estreita, para quem quer o mínimo na tela. */
+  sem_assinatura: {
+    scene: "dia",
+    overlays: [{
+      right: 44, bottom: 44,
+      chat: { width: 420, height: 260, show_header: false, opacity: 0.95, channel: "ofadinha" },
+      script: "main", count: 8,
+    }],
+  },
+
+  /* Figura comparativa do recolhimento — esta tem etiqueta de propósito. */
+  comparativo_recolhimento: {
+    scene: "noite",
+    overlays: [
+      { left: 210, top: 150, chat: { width: 380, height: 600, channel: "ofadinha" }, script: "main" },
+      { left: 1330, top: 150, chat: { width: 380, height: 600, fade_secs: 20, fade_percent: 25, channel: "ofadinha" }, script: "main", faded: true },
+    ],
+    caps: [
+      { left: 210, top: 780, html: "Chat ativo<small>janela inteira, 380 × 600</small>" },
+      { left: 1330, top: 780, html: "20 s sem mensagem<small>recolhe para 25% da altura</small>" },
+    ],
+  },
+};
+
+const params = new URLSearchParams(location.search);
+const preset = PRESETS[params.get("p")];
+const scene = document.getElementById("scene");
+scene.innerHTML = SCENES[preset.scene];
+
+for (const spec of preset.overlays) {
+  const frame = document.createElement("iframe");
+  const payload = { chat: spec.chat, script: spec.script, count: spec.count,
+                    move: spec.move, warn: spec.warn, faded: spec.faded, status: spec.status };
+  frame.src = "./frame.html#" + encodeURIComponent(JSON.stringify(payload));
+  frame.style.width = spec.chat.width + "px";
+  frame.style.height = spec.chat.height + "px";
+  for (const side of ["left", "top", "right", "bottom"]) {
+    if (spec[side] !== undefined) frame.style[side] = spec[side] + "px";
+  }
+  scene.appendChild(frame);
+}
+
+for (const cap of preset.caps || []) {
+  const box = document.createElement("div");
+  box.className = "cap";
+  box.innerHTML = cap.html;
+  box.style.left = cap.left + "px";
+  box.style.top = cap.top + "px";
+  scene.appendChild(box);
+}
+</script>
+</body>
+</html>

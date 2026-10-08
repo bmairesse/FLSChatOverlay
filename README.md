@@ -13,7 +13,8 @@ joga em um monitor só e não pode desviar o olhar para a janela do navegador.
 - **Recolhe sozinho quando o chat esfria**: passados os segundos que você
   definir sem mensagem nova, o overlay encolhe para uma faixa embaixo e devolve
   o resto da tela para o jogo
-- Vive na bandeja do sistema
+- Vive na bandeja do sistema, que também **recentraliza** um overlay perdido
+  fora da área visível
 - **Nenhum login na Twitch. Nenhum token. Nenhuma senha.**
 
 ---
@@ -170,6 +171,15 @@ Para gerar o pacote da Microsoft Store, veja
 Não existe atalho global: o app não registra nenhuma tecla fora da própria
 janela. Isso é [deliberado](#compatibilidade-com-anti-cheat).
 
+### Perdeu um overlay de vista?
+
+Desligar um monitor, trocar a resolução ou mudar o arranjo das telas deixa a
+janela numa coordenada que o mouse não alcança mais — e o modo mover não
+resolve, porque não sobra nada para agarrar. Bandeja → **Centralizar na tela**
+→ o chat (ou *Todos os chats*) traz a janela de volta para o centro do monitor.
+A posição nova já fica salva, e um chat escondido continua escondido: ele só é
+movido de lugar.
+
 ### Perfis e vários chats
 
 A configuração é organizada em dois níveis:
@@ -251,6 +261,7 @@ O tempo de 5 segundos é configurável.
 | Abrir configurações | Abre a janela de config (duplo-clique no ícone também) |
 | Perfil | Submenu com os perfis; o em uso aparece marcado |
 | Ativar mover / Travar posição | Alterna click-through e o modo de reposicionamento |
+| Centralizar na tela | Submenu com os chats do perfil; devolve um deles (ou todos) ao centro do monitor |
 | Mostrar / Ocultar overlays | Some com todos os overlays sem fechar o app |
 | Sair | Encerra de verdade |
 

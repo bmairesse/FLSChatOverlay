@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>Configurações</title>
+<link rel="stylesheet" href="../../../src/config.css" />
+</head>
+<body>
+<script src="../../../src/badges.js"></script>
+<script>
+/* Mesma ideia do frame.html: janela de configurações real, backend fingido. */
+
+const chat = (over) => Object.assign({
+  id: "chat-" + Math.random().toString(16).slice(2, 10),
+  name: "", channel: "", mention: "", opacity: 0.85,
+  x: 40, y: 40, width: 380, height: 600, font_size: 14,
+  text_color: "#ffffff", name_outline_color: "#000000",
+  highlight_channel_mentions: true, max_messages: 80, show_header: true,
+  fade_secs: 0, fade_percent: 100, visible: true,
+}, over);
+
+const STORE = {
+  version: 2,
+  active_profile: "profile-1",
+  idle_warning_secs: 5,
+  profiles: [
+    {
+      id: "profile-1", name: "Live de FPS",
+      chats: [
+        chat({ id: "chat-aaa1", name: "Minha live", channel: "ofadinha", mention: "", font_size: 15, fade_secs: 20, fade_percent: 25 }),
+        chat({ id: "chat-bbb2", name: "Live da parceira", channel: "fairyland_live", mention: "ofadinha", width: 350, height: 330 }),
+        chat({ id: "chat-ccc3", name: "Mesa de RPG", channel: "canal_convidado", font_size: 17, text_color: "#ffe9b3", visible: false }),
+      ],
+    },
+    { id: "profile-2", name: "Só assistindo", chats: [chat({ id: "chat-ddd4", name: "Chat 1", channel: "canal_convidado" })] },
+  ],
+};
+
+window.__TAURI__ = {
+  core: {
+    invoke: async (cmd) => {
+      if (cmd === "get_state") return STORE;
+      if (cmd === "is_move_mode") return false;
+      if (cmd === "settings_file_path") return String.raw`C:\Users\voce\AppData\Roaming\com.fairylandstudios.chatoverlay\settings.json`;
+      return STORE;
+    },
+  },
+  event: { listen: async () => () => {} },
+};
+
+(async () => {
+  const html = await (await fetch("../../../src/config.html")).text();
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  for (const s of doc.body.querySelectorAll("script")) s.remove();
+  document.body.innerHTML = doc.body.innerHTML;
+
+  await new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = "../../../src/config.js";
+    s.onload = resolve; s.onerror = reject;
+    document.body.appendChild(s);
+  });
+
+  // Sem foco em nada: o anel de foco no primeiro campo polui o print.
+  if (document.activeElement) document.activeElement.blur();
+  document.documentElement.dataset.height = document.body.scrollHeight;
+})();
+</script>
+</body>
+</html>
